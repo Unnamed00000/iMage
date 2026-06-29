@@ -1,6 +1,6 @@
 import {
-  PBKDF2_ITERATIONS, base64ToBytes, bytesToBase64, concatBytes,
-  createSecretPayload, deriveKeyBytes, extractSecretJson, jsonToPlainText,
+  PBKDF2_ITERATIONS, base64ToBytes, bytesToBase64, createSecretPayload,
+  deriveKeyBytes, embedSecretPayload, extractSecretJson, jsonToPlainText,
   plainTextToJson, randomBytes,
 } from "./pwa-crypto.js";
 
@@ -34,7 +34,7 @@ const TRANSLATIONS = {
   ru: {
     tabs: ["Создать", "Открыть и изменить", "Поиск пароля"],
     headings: ["Спрятать текст в изображение", "Расшифровать и изменить текст", "Поиск пароля"],
-    choose: "Выбрать изображение", secretJpg: "Секретный JPG", imageHint: "JPG или PNG",
+    choose: "Выбрать JPG или ZIP", secretJpg: "Секретное изображение или архив", imageHint: "JPG или PNG",
     min: "Минимальная длина пароля", max: "Максимальная длина пароля",
     modes: "Режимы поиска", options: ["Проверить цифры", "Проверить популярные пароли", "Проверить популярные комбинации", "Проверить маски", "Полный перебор"],
     start: "Узнать пароль", pause: "Пауза", resume: "Продолжить", stop: "Остановить",
@@ -56,16 +56,16 @@ const TRANSLATIONS = {
       setupButton: "Создать аккаунт", loginButton: "Войти", or: "или", proof: "Подтверждение администратора", createProfile: "Создать профиль", back: "Назад",
       roles: ["Пользователь", "Администратор"],
     },
-    createCopy: ["Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.", "Выбрать изображение", "Секретный текст", "Введите обычный текст. Можно использовать несколько строк и любые символы.", "Пароль изображения", "Здесь появится результат", "Готовый JPG можно скачать или сразу открыть во второй вкладке.", "Скачать секретный JPG"],
-    editCopy: ["Используйте результат первой вкладки или выберите сохранённый JPG.", "Выбрать секретный JPG", "Файл с зашифрованными данными", "Используется результат первой вкладки", "Пароль изображения", "Расшифрованный текст", "Текст появится здесь…", "Работает без сервера", "PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.", "Совместимо с Python V2", "Работает офлайн", "Пароль не сохраняется", "Скачать обновлённый JPG"],
+    createCopy: ["Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.", "Выбрать изображение", "Секретный текст", "Введите обычный текст. Можно использовать несколько строк и любые символы.", "Пароль изображения", "Здесь появится результат", "Готовый JPG можно скачать или сразу открыть во второй вкладке.", "Скачать ZIP с изображением"],
+    editCopy: ["Используйте результат первой вкладки или выберите сохранённый JPG/ZIP.", "Выбрать секретный JPG или ZIP", "Изображение или архив iMage", "Используется результат первой вкладки", "Пароль изображения", "Расшифрованный текст", "Текст появится здесь…", "Работает без сервера", "PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.", "Совместимо с Python V2", "Работает офлайн", "Пароль не сохраняется", "Скачать ZIP с обновлённым изображением"],
     searchDescription: "Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.",
-    speedLabel: "Скорость поиска", speedHint: "Чем выше значение, тем больше нагрузка на устройство.", speedRate: "паролей/с",
+    speedLabel: "Скорость поиска", speedHint: "Чем выше значение, тем больше нагрузка на устройство.", speedRate: "паролей/с", transferWarning: "Скачивание создаёт ZIP, чтобы мессенджер не изменил изображение. Получатель может открыть архив прямо в iMage.",
     runtime: { updating: "Обновление…", updateFailed: "Не удалось обновить приложение", lengthError: "Укажите длину пароля от 1 до 12", modeError: "Выберите хотя бы один режим поиска", preparing: "Подготовка", searching: "Поиск выполняется…", paused: "Пауза", found: "Пароль найден", notFound: "Пароль не найден", stopped: "Остановлено", searchStopped: "Поиск остановлен", missingSecret: "Неверный пароль или секрет не найден", searchError: "Ошибка поиска пароля", veryLong: "очень долго", lessSecond: "меньше секунды", showPassword: "Показать пароль", hidePassword: "Скрыть пароль" },
   },
   en: {
     tabs: ["Create", "Open and edit", "Password search"],
     headings: ["Hide text in an image", "Decrypt and edit text", "Password search"],
-    choose: "Choose image", secretJpg: "Secret JPG", imageHint: "JPG or PNG",
+    choose: "Choose JPG or ZIP", secretJpg: "Secret image or archive", imageHint: "JPG or PNG",
     min: "Minimum password length", max: "Maximum password length",
     modes: "Search modes", options: ["Check digits", "Check popular passwords", "Check popular combinations", "Check masks", "Full brute force"],
     start: "Find password", pause: "Pause", resume: "Continue", stop: "Stop",
@@ -87,16 +87,16 @@ const TRANSLATIONS = {
       setupButton: "Create account", loginButton: "Sign in", or: "or", proof: "Administrator approval", createProfile: "Create profile", back: "Back",
       roles: ["User", "Administrator"],
     },
-    createCopy: ["Processing happens on this device. The image and password are never uploaded.", "Choose image", "Secret text", "Enter plain text. You can use multiple lines and any characters.", "Image password", "Your result will appear here", "Download the finished JPG or open it directly in the second tab.", "Download secret JPG"],
-    editCopy: ["Use the result from the first tab or select a saved JPG.", "Choose secret JPG", "File with encrypted data", "Using the result from the first tab", "Image password", "Decrypted text", "Text will appear here…", "Works without a server", "PBKDF2-SHA256 and Fernet run with Web Crypto directly on the device.", "Compatible with Python V2", "Works offline", "Password is not saved", "Download updated JPG"],
+    createCopy: ["Processing happens on this device. The image and password are never uploaded.", "Choose image", "Secret text", "Enter plain text. You can use multiple lines and any characters.", "Image password", "Your result will appear here", "Download the finished JPG or open it directly in the second tab.", "Download image ZIP"],
+    editCopy: ["Use the result from the first tab or select a saved JPG/ZIP.", "Choose secret JPG or ZIP", "iMage image or archive", "Using the result from the first tab", "Image password", "Decrypted text", "Text will appear here…", "Works without a server", "PBKDF2-SHA256 and Fernet run with Web Crypto directly on the device.", "Compatible with Python V2", "Works offline", "Password is not saved", "Download updated image ZIP"],
     searchDescription: "The check runs locally and does not send the image or recovered password to the internet.",
-    speedLabel: "Search speed", speedHint: "Higher values use more processing power on the device.", speedRate: "passwords/s",
+    speedLabel: "Search speed", speedHint: "Higher values use more processing power on the device.", speedRate: "passwords/s", transferWarning: "Downloads are packaged as ZIP so messaging apps cannot alter the image. The recipient can open the archive directly in iMage.",
     runtime: { updating: "Updating…", updateFailed: "App update failed", lengthError: "Set password length from 1 to 12", modeError: "Select at least one search mode", preparing: "Preparing", searching: "Searching…", paused: "Paused", found: "Password found", notFound: "Password not found", stopped: "Stopped", searchStopped: "Search stopped", missingSecret: "Wrong password or secret not found", searchError: "Password search error", veryLong: "very long", lessSecond: "less than a second", showPassword: "Show password", hidePassword: "Hide password" },
   },
   da: {
     tabs: ["Opret", "Åbn og rediger", "Søg adgangskode"],
     headings: ["Skjul tekst i et billede", "Dekryptér og rediger tekst", "Søg efter adgangskode"],
-    choose: "Vælg billede", secretJpg: "Hemmelig JPG", imageHint: "JPG eller PNG",
+    choose: "Vælg JPG eller ZIP", secretJpg: "Hemmeligt billede eller arkiv", imageHint: "JPG eller PNG",
     min: "Mindste adgangskodelængde", max: "Største adgangskodelængde",
     modes: "Søgemetoder", options: ["Kontrollér cifre", "Kontrollér populære adgangskoder", "Kontrollér populære kombinationer", "Kontrollér mønstre", "Fuld brute force"],
     start: "Find adgangskode", pause: "Pause", resume: "Fortsæt", stop: "Stop",
@@ -118,18 +118,24 @@ const TRANSLATIONS = {
       setupButton: "Opret konto", loginButton: "Log ind", or: "eller", proof: "Administratorgodkendelse", createProfile: "Opret profil", back: "Tilbage",
       roles: ["Bruger", "Administrator"],
     },
-    createCopy: ["Behandlingen foregår på enheden. Billedet og adgangskoden uploades aldrig.", "Vælg billede", "Hemmelig tekst", "Skriv almindelig tekst. Du kan bruge flere linjer og alle tegn.", "Billedets adgangskode", "Dit resultat vises her", "Hent den færdige JPG, eller åbn den direkte i den anden fane.", "Hent hemmelig JPG"],
-    editCopy: ["Brug resultatet fra den første fane, eller vælg en gemt JPG.", "Vælg hemmelig JPG", "Fil med krypterede data", "Bruger resultatet fra den første fane", "Billedets adgangskode", "Dekrypteret tekst", "Teksten vises her…", "Virker uden en server", "PBKDF2-SHA256 og Fernet kører med Web Crypto direkte på enheden.", "Kompatibel med Python V2", "Virker offline", "Adgangskoden gemmes ikke", "Hent opdateret JPG"],
+    createCopy: ["Behandlingen foregår på enheden. Billedet og adgangskoden uploades aldrig.", "Vælg billede", "Hemmelig tekst", "Skriv almindelig tekst. Du kan bruge flere linjer og alle tegn.", "Billedets adgangskode", "Dit resultat vises her", "Hent den færdige JPG, eller åbn den direkte i den anden fane.", "Hent ZIP med billede"],
+    editCopy: ["Brug resultatet fra den første fane, eller vælg en gemt JPG/ZIP.", "Vælg hemmelig JPG eller ZIP", "iMage-billede eller arkiv", "Bruger resultatet fra den første fane", "Billedets adgangskode", "Dekrypteret tekst", "Teksten vises her…", "Virker uden en server", "PBKDF2-SHA256 og Fernet kører med Web Crypto direkte på enheden.", "Kompatibel med Python V2", "Virker offline", "Adgangskoden gemmes ikke", "Hent ZIP med opdateret billede"],
     searchDescription: "Kontrollen kører lokalt og sender ikke billedet eller den fundne adgangskode til internettet.",
-    speedLabel: "Søgehastighed", speedHint: "En højere værdi bruger mere processorkraft på enheden.", speedRate: "adgangskoder/s",
+    speedLabel: "Søgehastighed", speedHint: "En højere værdi bruger mere processorkraft på enheden.", speedRate: "adgangskoder/s", transferWarning: "Downloads pakkes som ZIP, så beskedapps ikke kan ændre billedet. Modtageren kan åbne arkivet direkte i iMage.",
     runtime: { updating: "Opdaterer…", updateFailed: "Appen kunne ikke opdateres", lengthError: "Angiv en adgangskodelængde fra 1 til 12", modeError: "Vælg mindst én søgemetode", preparing: "Forbereder", searching: "Søger…", paused: "Pause", found: "Adgangskode fundet", notFound: "Adgangskoden blev ikke fundet", stopped: "Stoppet", searchStopped: "Søgningen er stoppet", missingSecret: "Forkert adgangskode eller ingen hemmelighed fundet", searchError: "Fejl under adgangskodesøgning", veryLong: "meget lang tid", lessSecond: "under ét sekund", showPassword: "Vis adgangskode", hidePassword: "Skjul adgangskode" },
   },
 };
 
 const MESSAGES = {
-  ru: { enterLogin: "Введите логин", passwordMin: "Пароль должен содержать минимум 6 символов", mismatch: "Пароли не совпадают", invalidLogin: "Неверный логин или пароль", invalidAdmin: "Неверные данные администратора", adminRequired: "Требуются права администратора", profileExists: "Профиль с таким логином уже существует", profileCreated: (name) => `Профиль ${name} создан`, chooseImage: "Выберите изображение", convertFailed: "Не удалось преобразовать изображение", createdTitle: "Секретное изображение создано", readyDownload: (name) => `${name} готов к скачиванию.`, encrypting: "Шифрование…", created: "Секретное изображение создано", decrypting: "Расшифровка…", decrypted: "Текст расшифрован", saving: "Сохранение…", updated: "Обновлённое изображение создано", iosInstall: "iPhone: нажмите Поделиться → На экран Домой", browserInstall: "Откройте меню браузера и выберите «Установить приложение»", offlineFailed: "Не удалось включить офлайн-режим" },
-  en: { enterLogin: "Enter a username", passwordMin: "The password must contain at least 6 characters", mismatch: "Passwords do not match", invalidLogin: "Wrong username or password", invalidAdmin: "Wrong administrator credentials", adminRequired: "Administrator rights are required", profileExists: "A profile with this username already exists", profileCreated: (name) => `Profile ${name} created`, chooseImage: "Choose an image", convertFailed: "The image could not be converted", createdTitle: "Secret image created", readyDownload: (name) => `${name} is ready to download.`, encrypting: "Encrypting…", created: "Secret image created", decrypting: "Decrypting…", decrypted: "Text decrypted", saving: "Saving…", updated: "Updated image created", iosInstall: "iPhone: tap Share → Add to Home Screen", browserInstall: "Open the browser menu and select “Install app”", offlineFailed: "Offline mode could not be enabled" },
-  da: { enterLogin: "Indtast et brugernavn", passwordMin: "Adgangskoden skal indeholde mindst 6 tegn", mismatch: "Adgangskoderne er ikke ens", invalidLogin: "Forkert brugernavn eller adgangskode", invalidAdmin: "Forkerte administratoroplysninger", adminRequired: "Administratorrettigheder er påkrævet", profileExists: "Der findes allerede en profil med dette brugernavn", profileCreated: (name) => `Profilen ${name} er oprettet`, chooseImage: "Vælg et billede", convertFailed: "Billedet kunne ikke konverteres", createdTitle: "Det hemmelige billede er oprettet", readyDownload: (name) => `${name} er klar til at blive hentet.`, encrypting: "Krypterer…", created: "Det hemmelige billede er oprettet", decrypting: "Dekrypterer…", decrypted: "Teksten er dekrypteret", saving: "Gemmer…", updated: "Det opdaterede billede er oprettet", iosInstall: "iPhone: tryk på Del → Føj til hjemmeskærm", browserInstall: "Åbn browsermenuen, og vælg “Installér app”", offlineFailed: "Offlinetilstand kunne ikke aktiveres" },
+  ru: { enterLogin: "Введите логин", passwordMin: "Пароль должен содержать минимум 6 символов", mismatch: "Пароли не совпадают", invalidLogin: "Неверный логин или пароль", invalidAdmin: "Неверные данные администратора", adminRequired: "Требуются права администратора", profileExists: "Профиль с таким логином уже существует", profileCreated: (name) => `Профиль ${name} создан`, chooseImage: "Выберите изображение", convertFailed: "Не удалось преобразовать изображение", createdTitle: "Секретное изображение создано", readyDownload: (name) => `${name} готов к скачиванию.`, encrypting: "Шифрование…", created: "Секретное изображение создано", decrypting: "Расшифровка…", decrypted: "Текст расшифрован", saving: "Сохранение…", updated: "Обновлённое изображение создано", iosInstall: "iPhone: нажмите Поделиться → На экран Домой", browserInstall: "Откройте меню браузера и выберите «Установить приложение»", offlineFailed: "Не удалось включить офлайн-режим", verificationFailed: "Созданный файл не прошёл проверку" },
+  en: { enterLogin: "Enter a username", passwordMin: "The password must contain at least 6 characters", mismatch: "Passwords do not match", invalidLogin: "Wrong username or password", invalidAdmin: "Wrong administrator credentials", adminRequired: "Administrator rights are required", profileExists: "A profile with this username already exists", profileCreated: (name) => `Profile ${name} created`, chooseImage: "Choose an image", convertFailed: "The image could not be converted", createdTitle: "Secret image created", readyDownload: (name) => `${name} is ready to download.`, encrypting: "Encrypting…", created: "Secret image created", decrypting: "Decrypting…", decrypted: "Text decrypted", saving: "Saving…", updated: "Updated image created", iosInstall: "iPhone: tap Share → Add to Home Screen", browserInstall: "Open the browser menu and select “Install app”", offlineFailed: "Offline mode could not be enabled", verificationFailed: "The created file failed verification" },
+  da: { enterLogin: "Indtast et brugernavn", passwordMin: "Adgangskoden skal indeholde mindst 6 tegn", mismatch: "Adgangskoderne er ikke ens", invalidLogin: "Forkert brugernavn eller adgangskode", invalidAdmin: "Forkerte administratoroplysninger", adminRequired: "Administratorrettigheder er påkrævet", profileExists: "Der findes allerede en profil med dette brugernavn", profileCreated: (name) => `Profilen ${name} er oprettet`, chooseImage: "Vælg et billede", convertFailed: "Billedet kunne ikke konverteres", createdTitle: "Det hemmelige billede er oprettet", readyDownload: (name) => `${name} er klar til at blive hentet.`, encrypting: "Krypterer…", created: "Det hemmelige billede er oprettet", decrypting: "Dekrypterer…", decrypted: "Teksten er dekrypteret", saving: "Gemmer…", updated: "Det opdaterede billede er oprettet", iosInstall: "iPhone: tryk på Del → Føj til hjemmeskærm", browserInstall: "Åbn browsermenuen, og vælg “Installér app”", offlineFailed: "Offlinetilstand kunne ikke aktiveres", verificationFailed: "Den oprettede fil bestod ikke kontrollen" },
+};
+
+const ZIP_MESSAGES = {
+  ru: { archiving: "Создание ZIP…", ready: "ZIP-архив создан", invalid: "Не удалось прочитать ZIP-архив", noImage: "В архиве нет JPG или PNG", encrypted: "ZIP с отдельным паролем не поддерживается", unsupported: "Этот способ сжатия ZIP не поддерживается браузером", damaged: "Файл внутри ZIP повреждён", tooLarge: "Файл слишком большой для обычного ZIP" },
+  en: { archiving: "Creating ZIP…", ready: "ZIP archive created", invalid: "The ZIP archive could not be read", noImage: "The archive contains no JPG or PNG", encrypted: "Password-protected ZIP files are not supported", unsupported: "This ZIP compression method is not supported by the browser", damaged: "The file inside the ZIP is damaged", tooLarge: "The file is too large for a standard ZIP" },
+  da: { archiving: "Opretter ZIP…", ready: "ZIP-arkivet er oprettet", invalid: "ZIP-arkivet kunne ikke læses", noImage: "Arkivet indeholder ingen JPG eller PNG", encrypted: "Adgangskodebeskyttede ZIP-filer understøttes ikke", unsupported: "Denne ZIP-komprimering understøttes ikke af browseren", damaged: "Filen i ZIP-arkivet er beskadiget", tooLarge: "Filen er for stor til en almindelig ZIP" },
 };
 
 function language() {
@@ -139,6 +145,10 @@ function language() {
 
 function messages() {
   return MESSAGES[language()];
+}
+
+function zipMessages() {
+  return ZIP_MESSAGES[language()];
 }
 
 function replaceLabelText(label, value) {
@@ -226,6 +236,7 @@ function applyLanguage(code) {
     $("#created-copy").textContent = copy.createCopy[6];
   }
   $("#download-created").textContent = copy.createCopy[7];
+  $("#transfer-warning").textContent = copy.transferWarning;
   $("#extract-image").closest("label").querySelector("strong").textContent = copy.editCopy[1];
   if (!selectedSecretFile && !currentSecretBlob) $("#extract-file-name").textContent = copy.editCopy[2];
   replaceLabelText($("#created-source-note"), ` ${copy.editCopy[3]}`);
@@ -506,6 +517,159 @@ function download(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+let crcTable = null;
+
+function crc32(bytes) {
+  if (!crcTable) {
+    crcTable = new Uint32Array(256);
+    for (let index = 0; index < 256; index += 1) {
+      let value = index;
+      for (let bit = 0; bit < 8; bit += 1)
+        value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+      crcTable[index] = value >>> 0;
+    }
+  }
+  let value = 0xffffffff;
+  for (const byte of bytes) value = crcTable[(value ^ byte) & 0xff] ^ (value >>> 8);
+  return (value ^ 0xffffffff) >>> 0;
+}
+
+function zipDateTime(date = new Date()) {
+  const year = Math.min(2107, Math.max(1980, date.getFullYear()));
+  return {
+    time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+    date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+  };
+}
+
+async function createZipArchive(blob, fileName) {
+  const data = new Uint8Array(await blob.arrayBuffer());
+  const name = new TextEncoder().encode(fileName);
+  if (data.length > 0xffffffff || name.length > 0xffff) throw new Error(zipMessages().tooLarge);
+  const checksum = crc32(data);
+  const stamp = zipDateTime();
+
+  const local = new Uint8Array(30);
+  const localView = new DataView(local.buffer);
+  localView.setUint32(0, 0x04034b50, true);
+  localView.setUint16(4, 20, true);
+  localView.setUint16(6, 0x0800, true);
+  localView.setUint16(8, 0, true);
+  localView.setUint16(10, stamp.time, true);
+  localView.setUint16(12, stamp.date, true);
+  localView.setUint32(14, checksum, true);
+  localView.setUint32(18, data.length, true);
+  localView.setUint32(22, data.length, true);
+  localView.setUint16(26, name.length, true);
+
+  const central = new Uint8Array(46);
+  const centralView = new DataView(central.buffer);
+  centralView.setUint32(0, 0x02014b50, true);
+  centralView.setUint16(4, 20, true);
+  centralView.setUint16(6, 20, true);
+  centralView.setUint16(8, 0x0800, true);
+  centralView.setUint16(10, 0, true);
+  centralView.setUint16(12, stamp.time, true);
+  centralView.setUint16(14, stamp.date, true);
+  centralView.setUint32(16, checksum, true);
+  centralView.setUint32(20, data.length, true);
+  centralView.setUint32(24, data.length, true);
+  centralView.setUint16(28, name.length, true);
+  centralView.setUint32(42, 0, true);
+
+  const centralOffset = local.length + name.length + data.length;
+  const centralSize = central.length + name.length;
+  const end = new Uint8Array(22);
+  const endView = new DataView(end.buffer);
+  endView.setUint32(0, 0x06054b50, true);
+  endView.setUint16(8, 1, true);
+  endView.setUint16(10, 1, true);
+  endView.setUint32(12, centralSize, true);
+  endView.setUint32(16, centralOffset, true);
+  return new Blob([local, name, data, central, name, end], { type: "application/zip" });
+}
+
+function isZipFile(file) {
+  return /\.zip$/i.test(file.name) || file.type === "application/zip" || file.type === "application/x-zip-compressed";
+}
+
+async function inflateZipData(bytes) {
+  if (!("DecompressionStream" in globalThis)) throw new Error(zipMessages().unsupported);
+  try {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  } catch { throw new Error(zipMessages().unsupported); }
+}
+
+async function extractImageFromZip(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let endOffset = -1;
+  const minimum = Math.max(0, bytes.length - 65_557);
+  for (let offset = bytes.length - 22; offset >= minimum; offset -= 1) {
+    if (view.getUint32(offset, true) === 0x06054b50) { endOffset = offset; break; }
+  }
+  if (endOffset < 0) throw new Error(zipMessages().invalid);
+  const entries = view.getUint16(endOffset + 10, true);
+  let offset = view.getUint32(endOffset + 16, true);
+  const decoder = new TextDecoder("utf-8");
+
+  for (let entry = 0; entry < entries; entry += 1) {
+    if (offset + 46 > bytes.length || view.getUint32(offset, true) !== 0x02014b50)
+      throw new Error(zipMessages().invalid);
+    const flags = view.getUint16(offset + 8, true);
+    const method = view.getUint16(offset + 10, true);
+    const expectedCrc = view.getUint32(offset + 16, true);
+    const compressedSize = view.getUint32(offset + 20, true);
+    const uncompressedSize = view.getUint32(offset + 24, true);
+    const nameLength = view.getUint16(offset + 28, true);
+    const extraLength = view.getUint16(offset + 30, true);
+    const commentLength = view.getUint16(offset + 32, true);
+    const localOffset = view.getUint32(offset + 42, true);
+    const nameStart = offset + 46;
+    const nameEnd = nameStart + nameLength;
+    if (nameEnd > bytes.length) throw new Error(zipMessages().invalid);
+    const entryName = decoder.decode(bytes.slice(nameStart, nameEnd));
+    offset = nameEnd + extraLength + commentLength;
+    if (!/\.(jpe?g|png)$/i.test(entryName) || entryName.endsWith("/")) continue;
+    if (flags & 1) throw new Error(zipMessages().encrypted);
+    if (localOffset + 30 > bytes.length || view.getUint32(localOffset, true) !== 0x04034b50)
+      throw new Error(zipMessages().invalid);
+    const localNameLength = view.getUint16(localOffset + 26, true);
+    const localExtraLength = view.getUint16(localOffset + 28, true);
+    const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    const dataEnd = dataStart + compressedSize;
+    if (dataEnd > bytes.length) throw new Error(zipMessages().invalid);
+    const compressed = bytes.slice(dataStart, dataEnd);
+    let data;
+    if (method === 0) data = compressed;
+    else if (method === 8) data = await inflateZipData(compressed);
+    else throw new Error(zipMessages().unsupported);
+    if (data.length !== uncompressedSize || crc32(data) !== expectedCrc)
+      throw new Error(zipMessages().damaged);
+    const cleanName = entryName.split(/[\\/]/).pop() || "iMage_secret.jpg";
+    const mime = /\.png$/i.test(cleanName) ? "image/png" : "image/jpeg";
+    return new File([data], cleanName, { type: mime });
+  }
+  throw new Error(zipMessages().noImage);
+}
+
+async function resolveSecretFile(file) {
+  checkedFile(file);
+  return isZipFile(file) ? extractImageFromZip(file) : file;
+}
+
+async function downloadSecretArchive(button) {
+  if (!currentSecretBlob) return;
+  busy(button, true, zipMessages().archiving);
+  try {
+    const zip = await createZipArchive(currentSecretBlob, currentSecretName);
+    download(zip, currentSecretName.replace(/\.jpe?g$/i, "") + ".zip");
+    toast(zipMessages().ready);
+  } catch (error) { toast(error.message, true); }
+  finally { busy(button, false); }
+}
+
 function showPreview(blob, name, created = false) {
   currentSecretBlob = blob;
   currentSecretName = name;
@@ -536,10 +700,20 @@ $("#create-image").addEventListener("change", (event) => {
   $("#create-file-name").textContent = file ? file.name : TRANSLATIONS[language()].imageHint;
 });
 
-$("#extract-image").addEventListener("change", (event) => {
-  selectedSecretFile = event.target.files[0] || null;
-  if (selectedSecretFile) {
-    $("#extract-file-name").textContent = selectedSecretFile.name;
+$("#extract-image").addEventListener("change", async (event) => {
+  const picked = event.target.files[0] || null;
+  selectedSecretFile = null;
+  if (picked) {
+    try {
+      selectedSecretFile = await resolveSecretFile(picked);
+    } catch (error) {
+      event.target.value = "";
+      $("#extract-file-name").textContent = TRANSLATIONS[language()].editCopy[2];
+      toast(error.message, true);
+      return;
+    }
+    $("#extract-file-name").textContent = isZipFile(picked)
+      ? `${picked.name} → ${selectedSecretFile.name}` : selectedSecretFile.name;
     $("#created-source-note").classList.add("hidden");
     $("#edit-preview").src = URL.createObjectURL(selectedSecretFile);
     $("#edit-preview").classList.remove("hidden");
@@ -557,18 +731,22 @@ $("#create-form").addEventListener("submit", async (event) => {
   try {
     const source = checkedFile($("#create-image").files[0]);
     const jpeg = await jpegBytes(source);
-    const payload = await createSecretPayload(
-      plainTextToJson($("#create-text").value), $("#create-password").value);
-    const blob = new Blob([concatBytes(jpeg, payload)], { type: "image/jpeg" });
+    const jsonText = plainTextToJson($("#create-text").value);
+    const password = $("#create-password").value;
+    const payload = await createSecretPayload(jsonText, password);
+    const secretBytes = embedSecretPayload(jpeg, payload);
+    try {
+      if (await extractSecretJson(secretBytes, password) !== jsonText) throw new Error();
+    } catch { throw new Error(messages().verificationFailed); }
+    const blob = new Blob([secretBytes], { type: "image/jpeg" });
     showPreview(blob, source.name.replace(/\.[^.]+$/, "") + "_secret.jpg", true);
     toast(messages().created);
   } catch (error) { toast(error.message, true); }
   finally { busy(button, false); }
 });
 
-$("#download-created").addEventListener("click", () => {
-  if (currentSecretBlob) download(currentSecretBlob, currentSecretName);
-});
+$("#download-created").addEventListener("click", () =>
+  downloadSecretArchive($("#download-created")));
 
 $("#extract-submit").addEventListener("click", async () => {
   const button = $("#extract-submit");
@@ -595,9 +773,14 @@ $("#save-updated").addEventListener("click", async () => {
   busy(button, true, messages().saving);
   try {
     const jpeg = await jpegBytes(checkedFile(selectedImage()));
-    const payload = await createSecretPayload(
-      plainTextToJson($("#extract-text").value), $("#extract-password").value);
-    const blob = new Blob([concatBytes(jpeg, payload)], { type: "image/jpeg" });
+    const jsonText = plainTextToJson($("#extract-text").value);
+    const password = $("#extract-password").value;
+    const payload = await createSecretPayload(jsonText, password);
+    const secretBytes = embedSecretPayload(jpeg, payload);
+    try {
+      if (await extractSecretJson(secretBytes, password) !== jsonText) throw new Error();
+    } catch { throw new Error(messages().verificationFailed); }
+    const blob = new Blob([secretBytes], { type: "image/jpeg" });
     showPreview(blob, currentSecretName.replace(/\.jpg$/i, "") + "_updated.jpg");
     $("#download-updated").classList.remove("hidden");
     toast(messages().updated);
@@ -605,9 +788,8 @@ $("#save-updated").addEventListener("click", async () => {
   finally { busy(button, false); }
 });
 
-$("#download-updated").addEventListener("click", () => {
-  if (currentSecretBlob) download(currentSecretBlob, currentSecretName);
-});
+$("#download-updated").addEventListener("click", () =>
+  downloadSecretArchive($("#download-updated")));
 
 function formatCount(value) {
   if (!Number.isFinite(value)) return "∞";
@@ -677,9 +859,25 @@ function finishSearch(result, error = false) {
   $("#search-result").classList.toggle("failed", error);
 }
 
-$("#search-image").addEventListener("change", (event) => {
-  selectedSearchFile = event.target.files[0] || null;
-  $("#search-file-name").textContent = selectedSearchFile ? selectedSearchFile.name : TRANSLATIONS[language()].secretJpg;
+$("#search-image").addEventListener("change", async (event) => {
+  const picked = event.target.files[0] || null;
+  selectedSearchFile = null;
+  if (!picked) {
+    $("#search-file-name").textContent = TRANSLATIONS[language()].secretJpg;
+    return;
+  }
+  $("#search-start").disabled = true;
+  try {
+    selectedSearchFile = await resolveSecretFile(picked);
+    $("#search-file-name").textContent = isZipFile(picked)
+      ? `${picked.name} → ${selectedSearchFile.name}` : selectedSearchFile.name;
+  } catch (error) {
+    event.target.value = "";
+    $("#search-file-name").textContent = TRANSLATIONS[language()].secretJpg;
+    toast(error.message, true);
+  } finally {
+    if (!passwordWorker) $("#search-start").disabled = false;
+  }
 });
 
 $("#search-start").addEventListener("click", async () => {
