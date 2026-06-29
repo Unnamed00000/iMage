@@ -21,22 +21,33 @@
 .password-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .password-toggle .eye-slash { opacity: 0; stroke-width: 2.2; }
 .password-toggle.revealed .eye-slash { opacity: 1; }
-.hex-settings {
+.hex-settings,
+#settings-button.hex-settings {
   display: grid;
   width: 52px;
   height: 46px;
   min-height: 0;
   padding: 0;
   place-items: center;
+  border: 0 !important;
   border-radius: 0;
-  background: transparent;
-  color: var(--green);
-  clip-path: none;
+  background: transparent !important;
+  color: var(--green) !important;
+  clip-path: none !important;
+  font-size: 0 !important;
+  font-weight: 700;
+  line-height: 1;
+}
+.hex-settings:hover:not(:disabled),
+#settings-button.hex-settings:hover:not(:disabled) { background: transparent !important; transform: translateY(-1px) scale(1.04); }
+#settings-button.hex-settings .hex-gem { display: none !important; }
+#settings-button.hex-settings::after {
+  content: "\2699";
+  display: block;
   font-size: 30px;
   font-weight: 700;
   line-height: 1;
 }
-.hex-settings:hover:not(:disabled) { background: transparent; transform: translateY(-1px) scale(1.04); }
 
 .settings-modal { position: fixed; inset: 0; z-index: 50; display: grid; justify-items: end; }
 .settings-backdrop { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; border-radius: 0; background: rgba(8, 18, 12, .55); }
@@ -120,7 +131,8 @@ html[data-theme="dark"] .secondary { border-color: #4c5a4f; background: #243128;
 html[data-theme="dark"] .secondary:hover:not(:disabled) { border-color: #7c9b87; background: #304137; }
 html[data-theme="dark"] .primary { background: #83bc99; color: #07160e; }
 html[data-theme="dark"] .primary:hover:not(:disabled) { background: #a1d1b2; }
-html[data-theme="dark"] .hex-settings { background: transparent; color: #e0f5aa; }
+html[data-theme="dark"] .hex-settings,
+html[data-theme="dark"] #settings-button.hex-settings { background: transparent !important; color: #e0f5aa !important; }
 html[data-theme="dark"] .file-icon { background: #245e48; color: #e0f5aa; }
 html[data-theme="dark"] .code-editor.plain-editor:disabled { background: #151d17; color: #9eaaa1; }
 html[data-theme="dark"] .preview-frame { background: #111813; }
