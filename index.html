@@ -102,7 +102,8 @@
             <div class="preview-frame"><img id="created-preview" alt="Секретное изображение"><div class="preview-placeholder">{···}</div></div>
             <h3 id="created-title">Здесь появится результат</h3>
             <p id="created-copy">Готовый JPG можно скачать или сразу открыть во второй вкладке.</p>
-            <button id="download-created" class="secondary hidden" type="button">Скачать секретный JPG</button>
+            <button id="download-created" class="secondary hidden" type="button">Скачать ZIP с изображением</button>
+            <p id="transfer-warning" class="transfer-warning">Скачивание создаёт ZIP, чтобы мессенджер не изменил изображение. Получатель может открыть архив прямо в iMage.</p>
           </aside>
         </div>
       </section>
@@ -115,8 +116,8 @@
         <div class="content-grid edit-grid">
           <div class="form-column">
             <label class="file-picker compact" for="extract-image">
-              <input id="extract-image" type="file" accept="image/jpeg">
-              <span class="file-icon">↗</span><span><strong>Выбрать секретный JPG</strong><small id="extract-file-name">Файл с зашифрованными данными</small></span>
+              <input id="extract-image" type="file" accept="image/jpeg,.zip,application/zip">
+              <span class="file-icon">↗</span><span><strong>Выбрать секретный JPG или ZIP</strong><small id="extract-file-name">Изображение или архив iMage</small></span>
             </label>
             <div id="created-source-note" class="source-note hidden"><span>●</span> Используется результат первой вкладки</div>
             <div class="extract-row">
@@ -135,7 +136,7 @@
             <p>PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.</p>
             <ul><li>Совместимо с Python V2</li><li>Работает офлайн</li><li>Пароль не сохраняется</li></ul>
             <img id="edit-preview" class="edit-preview hidden" alt="Текущее изображение">
-            <button id="download-updated" class="secondary hidden" type="button">Скачать обновлённый JPG</button>
+            <button id="download-updated" class="secondary hidden" type="button">Скачать ZIP с обновлённым изображением</button>
           </aside>
         </div>
       </section>
@@ -148,8 +149,8 @@
         <div class="search-layout">
           <div class="search-controls">
             <label class="file-picker compact" for="search-image">
-              <input id="search-image" type="file" accept="image/jpeg">
-              <span class="file-icon">⌕</span><span><strong>Выбрать изображение</strong><small id="search-file-name">Секретный JPG</small></span>
+              <input id="search-image" type="file" accept="image/jpeg,.zip,application/zip">
+              <span class="file-icon">⌕</span><span><strong>Выбрать JPG или ZIP</strong><small id="search-file-name">Секретное изображение или архив</small></span>
             </label>
             <div class="length-grid">
               <label>Минимальная длина пароля<input id="search-min" type="number" min="1" max="12" value="1"></label>
@@ -201,7 +202,7 @@
         <label class="theme-switch"><input id="theme-toggle" type="checkbox"><span></span></label>
       </div>
       <label class="settings-section settings-select"><span><strong>Язык</strong><small>Язык интерфейса приложения</small></span><select id="language-select"><option value="ru">Русский</option><option value="en">English</option><option value="da">Dansk</option></select></label>
-      <div class="settings-section app-about"><div><strong>iMage</strong><small>Версия PWA · обработка только на устройстве</small></div><span class="version-badge">v4</span></div>
+      <div class="settings-section app-about"><div><strong>iMage</strong><small>Версия PWA · обработка только на устройстве</small></div><span class="version-badge">v5</span></div>
       <div class="settings-footer">
         <button id="install-app" class="primary install-button" type="button">Установить приложение</button>
         <button id="force-update" class="secondary" type="button">Принудительно обновить</button>

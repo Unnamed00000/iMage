@@ -15,8 +15,9 @@
   border-radius: 9px;
   background: transparent;
   color: var(--muted);
+  transform: translateY(-50%);
 }
-.password-toggle:hover:not(:disabled) { background: rgba(36,94,72,.09); transform: none; }
+.password-toggle:hover:not(:disabled) { background: rgba(36,94,72,.09); transform: translateY(-50%); }
 .password-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .password-toggle .eye-slash { opacity: 0; stroke-width: 2.2; }
 .password-toggle.revealed .eye-slash { opacity: 1; }
@@ -76,6 +77,8 @@
 .search-result { margin-top: 18px; padding: 15px; border: 1px solid rgba(204,233,137,.35); border-radius: 12px; background: rgba(204,233,137,.1); color: var(--lime); font-weight: 800; line-height: 1.45; }
 .search-result.found { border-color: var(--lime); background: rgba(204,233,137,.18); }
 .search-result.failed { border-color: rgba(255,178,165,.45); background: rgba(128,34,25,.2); color: #ffc0b8; }
+.transfer-warning { margin-top: 12px !important; padding: 11px 12px; border: 1px solid #d8bf83; border-radius: 10px; background: #fff8e8; color: #6f5722 !important; font-size: 12px !important; }
+.transfer-warning strong { color: inherit; }
 
 html[data-theme="dark"] {
   --ink: #eef4ef;
@@ -126,6 +129,7 @@ html[data-theme="dark"] .password-toggle:hover:not(:disabled) { background: rgba
 html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder { color: #89958c; opacity: 1; }
 html[data-theme="dark"] .security-card .secondary { border-color: rgba(255,255,255,.32); background: rgba(255,255,255,.1); color: #fff; }
+html[data-theme="dark"] .transfer-warning { border-color: #806d3f; background: #302a1c; color: #f2dda3 !important; }
 
 @media (display-mode: standalone) {
   .install-button { display: none !important; }

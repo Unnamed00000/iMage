@@ -3,7 +3,10 @@ const decoder = new TextDecoder("utf-8", { fatal: true });
 
 export const PBKDF2_ITERATIONS = 600_000;
 export const SECRET_MARKER = hexToBytes("9f3a7cc2e84d11b6a501d8734ef092bd");
+const EMBEDDED_MARKER = hexToBytes("47b6e319d25a4cc08fa137e46b9025dd");
 const LEGACY_MARKER = encoder.encode("---SECRET_JSON_START_V1---");
+const EMBEDDED_HEADER_SIZE = 28;
+const EMBEDDED_CHUNK_SIZE = 60_000;
 
 export function concatBytes(...parts) {
   const length = parts.reduce((sum, part) => sum + part.length, 0);
@@ -196,7 +199,7 @@ export async function createSecretPayload(jsonText, password) {
   return concatBytes(SECRET_MARKER, salt, token);
 }
 
-export function parseSecretPayload(imageBytes) {
+function parseDirectPayload(imageBytes) {
   let marker = SECRET_MARKER;
   let position = findLastBytes(imageBytes, marker);
   let legacy = false;
@@ -215,6 +218,78 @@ export function parseSecretPayload(imageBytes) {
     ? base64ToBytes(decoder.decode(storedToken))
     : storedToken;
   return { salt, token };
+}
+
+function markerAt(bytes, marker, position) {
+  if (position < 0 || position + marker.length > bytes.length) return false;
+  for (let index = 0; index < marker.length; index += 1) {
+    if (bytes[position + index] !== marker[index]) return false;
+  }
+  return true;
+}
+
+function parseEmbeddedPayload(imageBytes) {
+  const groups = new Map();
+  for (let position = 4; position <= imageBytes.length - EMBEDDED_HEADER_SIZE; position += 1) {
+    if (!markerAt(imageBytes, EMBEDDED_MARKER, position)) continue;
+    if (imageBytes[position - 4] !== 0xff || imageBytes[position - 3] !== 0xef) continue;
+    const view = new DataView(imageBytes.buffer, imageBytes.byteOffset, imageBytes.byteLength);
+    const total = view.getUint32(position + 16, false);
+    const index = view.getUint16(position + 20, false);
+    const count = view.getUint16(position + 22, false);
+    const chunkLength = view.getUint32(position + 24, false);
+    const segmentLength = view.getUint16(position - 2, false);
+    const chunkStart = position + EMBEDDED_HEADER_SIZE;
+    const chunkEnd = chunkStart + chunkLength;
+    if (!total || !count || count > 0xffff || index >= count || chunkLength > EMBEDDED_CHUNK_SIZE ||
+        segmentLength !== chunkLength + EMBEDDED_HEADER_SIZE + 2 || chunkEnd > imageBytes.length) continue;
+    const key = `${total}:${count}`;
+    if (!groups.has(key)) groups.set(key, { total, count, chunks: new Array(count) });
+    groups.get(key).chunks[index] = imageBytes.slice(chunkStart, chunkEnd);
+  }
+
+  for (const group of [...groups.values()].reverse()) {
+    if (group.chunks.some((chunk) => !chunk)) continue;
+    const payload = concatBytes(...group.chunks);
+    if (payload.length !== group.total) continue;
+    try { return parseDirectPayload(payload); } catch { /* Try another copy. */ }
+  }
+  return null;
+}
+
+export function embedSecretPayload(jpegBytes, payload) {
+  let eoi = -1;
+  for (let index = jpegBytes.length - 2; index >= 0; index -= 1) {
+    if (jpegBytes[index] === 0xff && jpegBytes[index + 1] === 0xd9) {
+      eoi = index;
+      break;
+    }
+  }
+  if (eoi < 0) throw new Error("Invalid JPEG image");
+
+  const count = Math.ceil(payload.length / EMBEDDED_CHUNK_SIZE);
+  if (count > 0xffff) throw new Error("Secret payload is too large");
+  const segments = [];
+  for (let index = 0; index < count; index += 1) {
+    const chunk = payload.slice(index * EMBEDDED_CHUNK_SIZE, (index + 1) * EMBEDDED_CHUNK_SIZE);
+    const segment = new Uint8Array(4 + EMBEDDED_HEADER_SIZE + chunk.length);
+    const view = new DataView(segment.buffer);
+    segment[0] = 0xff;
+    segment[1] = 0xef;
+    view.setUint16(2, EMBEDDED_HEADER_SIZE + chunk.length + 2, false);
+    segment.set(EMBEDDED_MARKER, 4);
+    view.setUint32(20, payload.length, false);
+    view.setUint16(24, index, false);
+    view.setUint16(26, count, false);
+    view.setUint32(28, chunk.length, false);
+    segment.set(chunk, 32);
+    segments.push(segment);
+  }
+  return concatBytes(jpegBytes.slice(0, eoi), ...segments, jpegBytes.slice(eoi), payload);
+}
+
+export function parseSecretPayload(imageBytes) {
+  return parseEmbeddedPayload(imageBytes) || parseDirectPayload(imageBytes);
 }
 
 export async function verifySecretPassword(payload, password) {
