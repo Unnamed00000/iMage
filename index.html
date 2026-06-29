@@ -72,18 +72,14 @@
         <div class="brand-mark small">{ }</div>
         <div><p class="eyebrow">OFFLINE · ENCRYPTED · PRIVATE</p><h1>Secret Image JSON</h1></div>
       </div>
-      <div class="account-actions">
-        <span id="profile-chip" class="profile-chip"></span>
-        <button id="install-app" class="primary install-button" type="button">Установить</button>
-        <button id="new-profile" class="ghost" type="button">Новый профиль</button>
-        <button id="logout" class="ghost" type="button">Выйти</button>
-      </div>
+      <button id="settings-button" class="hex-settings" type="button" aria-label="Настройки">⚙</button>
     </header>
 
     <main class="workspace">
       <nav class="tabs" aria-label="Рабочие вкладки">
         <button class="tab active" type="button" data-tab="create-panel"><span>01</span> Создать</button>
         <button class="tab" type="button" data-tab="edit-panel"><span>02</span> Открыть и изменить</button>
+        <button class="tab" type="button" data-tab="search-panel"><span>03</span> Поиск пароля</button>
       </nav>
 
       <section id="create-panel" class="panel active">
@@ -143,7 +139,71 @@
           </aside>
         </div>
       </section>
+
+      <section id="search-panel" class="panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">PASSWORD RECOVERY</p><h2>Поиск пароля</h2></div>
+          <p>Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.</p>
+        </div>
+        <div class="search-layout">
+          <div class="search-controls">
+            <label class="file-picker compact" for="search-image">
+              <input id="search-image" type="file" accept="image/jpeg">
+              <span class="file-icon">⌕</span><span><strong>Выбрать изображение</strong><small id="search-file-name">Секретный JPG</small></span>
+            </label>
+            <div class="length-grid">
+              <label>Минимальная длина пароля<input id="search-min" type="number" min="1" max="12" value="1"></label>
+              <label>Максимальная длина пароля<input id="search-max" type="number" min="1" max="12" value="6"></label>
+            </div>
+            <fieldset class="search-options">
+              <legend>Режимы поиска</legend>
+              <label><input id="search-digits" type="checkbox" checked> Проверить цифры</label>
+              <label><input id="search-popular" type="checkbox" checked> Проверить популярные пароли</label>
+              <label><input id="search-combinations" type="checkbox" checked> Проверить популярные комбинации</label>
+              <label><input id="search-masks" type="checkbox" checked> Проверить маски</label>
+              <label><input id="search-brute" type="checkbox"> Полный перебор</label>
+            </fieldset>
+            <button id="search-start" class="primary action-button" type="button">Узнать пароль</button>
+            <div class="search-actions">
+              <button id="search-pause" class="secondary" type="button" disabled>Пауза</button>
+              <button id="search-resume" class="secondary" type="button" disabled>Продолжить</button>
+              <button id="search-stop" class="danger-button" type="button" disabled>Остановить</button>
+            </div>
+            <p class="search-explanation">Программа не достаёт пароль напрямую из файла. Она проверяет разные варианты и показывает пароль только если подходящий вариант найден.</p>
+          </div>
+          <aside class="progress-card">
+            <p class="eyebrow">ПРОГРЕСС</p>
+            <dl class="progress-list">
+              <div><dt>Текущий режим поиска</dt><dd id="search-mode">Ожидание</dd></div>
+              <div><dt>Текущий проверяемый пароль</dt><dd id="search-current">—</dd></div>
+              <div><dt>Вариантов проверено</dt><dd id="search-checked">0</dd></div>
+              <div><dt>Скорость проверки</dt><dd id="search-speed">0 паролей/с</dd></div>
+              <div><dt>Примерное оставшееся время</dt><dd id="search-eta">—</dd></div>
+            </dl>
+            <div id="search-result" class="search-result">Результат появится здесь</div>
+          </aside>
+        </div>
+      </section>
     </main>
+  </div>
+
+  <div id="settings-modal" class="settings-modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <button id="settings-backdrop" class="settings-backdrop" type="button" aria-label="Закрыть настройки"></button>
+    <section class="settings-sheet">
+      <div class="settings-header"><div><p class="eyebrow">APP SETTINGS</p><h2 id="settings-title">Настройки</h2></div><button id="settings-close" class="icon-button" type="button" aria-label="Закрыть">×</button></div>
+      <div class="settings-section">
+        <div><strong>Тема</strong><small>Светлое или тёмное оформление</small></div>
+        <label class="theme-switch"><input id="theme-toggle" type="checkbox"><span></span></label>
+      </div>
+      <label class="settings-section settings-select"><span><strong>Язык</strong><small>Язык интерфейса приложения</small></span><select id="language-select"><option value="ru">Русский</option><option value="en">English</option></select></label>
+      <div class="settings-section app-about"><div><strong>Secret Image JSON</strong><small>Версия PWA · обработка только на устройстве</small></div><span class="version-badge">v3</span></div>
+      <div class="settings-footer">
+        <button id="install-app" class="primary install-button" type="button">Установить приложение</button>
+        <button id="force-update" class="secondary" type="button">Принудительно обновить</button>
+        <button id="new-profile" class="secondary" type="button">Создать новый профиль</button>
+        <button id="logout" class="ghost" type="button">Выйти</button>
+      </div>
+    </section>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
