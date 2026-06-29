@@ -29,11 +29,14 @@
   padding: 0;
   place-items: center;
   border-radius: 0;
-  background: var(--green);
-  color: var(--lime);
-  clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%);
-  font-size: 20px;
+  background: transparent;
+  color: var(--green);
+  clip-path: none;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
 }
+.hex-settings:hover:not(:disabled) { background: transparent; transform: translateY(-1px) scale(1.04); }
 
 .settings-modal { position: fixed; inset: 0; z-index: 50; display: grid; justify-items: end; }
 .settings-backdrop { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; border-radius: 0; background: rgba(8, 18, 12, .55); }
@@ -117,7 +120,7 @@ html[data-theme="dark"] .secondary { border-color: #4c5a4f; background: #243128;
 html[data-theme="dark"] .secondary:hover:not(:disabled) { border-color: #7c9b87; background: #304137; }
 html[data-theme="dark"] .primary { background: #83bc99; color: #07160e; }
 html[data-theme="dark"] .primary:hover:not(:disabled) { background: #a1d1b2; }
-html[data-theme="dark"] .hex-settings,
+html[data-theme="dark"] .hex-settings { background: transparent; color: #e0f5aa; }
 html[data-theme="dark"] .file-icon { background: #245e48; color: #e0f5aa; }
 html[data-theme="dark"] .code-editor.plain-editor:disabled { background: #151d17; color: #9eaaa1; }
 html[data-theme="dark"] .preview-frame { background: #111813; }
