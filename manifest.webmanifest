@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Secret Image JSON",
-  "short_name": "Secret Image",
+  "name": "iMage",
+  "short_name": "iMage",
   "description": "Скрытие зашифрованного текста внутри изображения без отправки данных в интернет.",
   "lang": "ru",
   "start_url": "./",

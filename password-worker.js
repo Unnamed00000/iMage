@@ -3,6 +3,7 @@ import { parseSecretPayload, verifySecretPassword } from "./pwa-crypto.js";
 let paused = false;
 let stopped = false;
 let running = false;
+let speedLevel = 5;
 let resumeWaiters = [];
 
 const POPULAR = [
@@ -105,6 +106,7 @@ async function runSearch(imageBuffer, options) {
   running = true;
   paused = false;
   stopped = false;
+  speedLevel = Math.min(10, Math.max(1, Number(options.speedLevel) || 1));
   let payload;
   try {
     payload = parseSecretPayload(new Uint8Array(imageBuffer));
@@ -122,7 +124,8 @@ async function runSearch(imageBuffer, options) {
 
   for (const mode of selectedModes) {
     self.postMessage({ type: "mode", mode: mode.name, total });
-    for (const candidate of mode.candidates) {
+    const iterator = mode.candidates[Symbol.iterator]();
+    while (true) {
       if (stopped) {
         self.postMessage({ type: "stopped", checked });
         running = false;
@@ -130,16 +133,34 @@ async function runSearch(imageBuffer, options) {
       }
       await waitWhilePaused();
       if (stopped) continue;
-      checked += 1;
-      if (await verifySecretPassword(payload, candidate)) {
-        emitProgress(mode.name, candidate, checked, total, startedAt);
-        self.postMessage({ type: "found", password: candidate, checked });
+
+      const batch = [];
+      for (let index = 0; index < speedLevel; index += 1) {
+        const next = iterator.next();
+        if (next.done) break;
+        batch.push(next.value);
+      }
+      if (!batch.length) break;
+
+      const matches = await Promise.all(batch.map((candidate) =>
+        verifySecretPassword(payload, candidate)));
+      checked += batch.length;
+      if (stopped) {
+        self.postMessage({ type: "stopped", checked });
+        running = false;
+        return;
+      }
+      const foundIndex = matches.findIndex(Boolean);
+      const current = foundIndex >= 0 ? batch[foundIndex] : batch[batch.length - 1];
+      if (foundIndex >= 0) {
+        emitProgress(mode.name, current, checked, total, startedAt);
+        self.postMessage({ type: "found", password: current, checked });
         running = false;
         return;
       }
       const now = performance.now();
       if (now - lastProgress >= 400) {
-        emitProgress(mode.name, candidate, checked, total, startedAt);
+        emitProgress(mode.name, current, checked, total, startedAt);
         lastProgress = now;
       }
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -167,5 +188,7 @@ self.addEventListener("message", (event) => {
     const waiters = resumeWaiters;
     resumeWaiters = [];
     waiters.forEach((resolve) => resolve());
+  } else if (event.data.type === "speed") {
+    speedLevel = Math.min(10, Math.max(1, Number(event.data.value) || 1));
   }
 });
