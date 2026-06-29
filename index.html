@@ -102,8 +102,11 @@
             <div class="preview-frame"><img id="created-preview" alt="Секретное изображение"><div class="preview-placeholder">{···}</div></div>
             <h3 id="created-title">Здесь появится результат</h3>
             <p id="created-copy">Готовый JPG можно скачать или сразу открыть во второй вкладке.</p>
-            <button id="download-created" class="secondary hidden" type="button">Скачать ZIP с изображением</button>
-            <p id="transfer-warning" class="transfer-warning">Скачивание создаёт ZIP, чтобы мессенджер не изменил изображение. Получатель может открыть архив прямо в iMage.</p>
+            <div class="download-choice">
+              <button id="download-created-image" class="secondary hidden" type="button">Скачать изображение</button>
+              <button id="download-created" class="secondary hidden" type="button">Скачать ZIP</button>
+            </div>
+            <p id="transfer-warning" class="transfer-warning">Можно скачать отдельное изображение или ZIP-архив. Для отправки через мессенджер безопаснее использовать ZIP или отправлять изображение как файл/документ.</p>
           </aside>
         </div>
       </section>
@@ -136,7 +139,10 @@
             <p>PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.</p>
             <ul><li>Совместимо с Python V2</li><li>Работает офлайн</li><li>Пароль не сохраняется</li></ul>
             <img id="edit-preview" class="edit-preview hidden" alt="Текущее изображение">
-            <button id="download-updated" class="secondary hidden" type="button">Скачать ZIP с обновлённым изображением</button>
+            <div class="download-choice security-downloads">
+              <button id="download-updated-image" class="secondary hidden" type="button">Скачать изображение</button>
+              <button id="download-updated" class="secondary hidden" type="button">Скачать ZIP</button>
+            </div>
           </aside>
         </div>
       </section>
@@ -202,7 +208,7 @@
         <label class="theme-switch"><input id="theme-toggle" type="checkbox"><span></span></label>
       </div>
       <label class="settings-section settings-select"><span><strong>Язык</strong><small>Язык интерфейса приложения</small></span><select id="language-select"><option value="ru">Русский</option><option value="en">English</option><option value="da">Dansk</option></select></label>
-      <div class="settings-section app-about"><div><strong>iMage</strong><small>Версия PWA · обработка только на устройстве</small></div><span class="version-badge">v5</span></div>
+      <div class="settings-section app-about"><div><strong>iMage</strong><small>Версия PWA · обработка только на устройстве</small><small class="build-code-line">Build Code: M15M14A12S9A5.2026</small></div><span class="version-badge">V6</span></div>
       <div class="settings-footer">
         <button id="install-app" class="primary install-button" type="button">Установить приложение</button>
         <button id="force-update" class="secondary" type="button">Принудительно обновить</button>
@@ -215,5 +221,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript>Для работы приложения требуется JavaScript.</noscript>
   <script type="module" src="./pwa.js"></script>
+  <script type="module" src="./pwa-download-options.js"></script>
 </body>
 </html>
