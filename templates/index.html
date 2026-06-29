@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secret Image JSON</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="{% if mode != 'workspace' %}auth-page{% endif %}">
+  {% if mode == 'setup' %}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <div class="brand-mark">{ }</div>
+        <p class="eyebrow">SECRET IMAGE JSON</p>
+        <h1>Создайте администратора</h1>
+        <p class="lead">Это локальная защита. Пароль хранится только как соль и односторонний хэш.</p>
+        {% include '_messages.html' %}
+        <form method="post" action="{{ url_for('setup') }}" class="stack-form">
+          <label>Логин
+            <input name="username" value="admin" autocomplete="username" required autofocus>
+          </label>
+          <label>Пароль
+            <input name="password" type="password" autocomplete="new-password" minlength="6" required>
+          </label>
+          <label>Повторите пароль
+            <input name="password_confirm" type="password" autocomplete="new-password" minlength="6" required>
+          </label>
+          <button class="primary wide" type="submit">Создать аккаунт</button>
+        </form>
+      </section>
+    </main>
+  {% elif mode == 'login' %}
+    <main class="auth-shell">
+      <section class="auth-card">
+        <div class="brand-mark">{ }</div>
+        <p class="eyebrow">SECRET IMAGE JSON</p>
+        <h1>Вход администратора</h1>
+        <p class="lead">Введите локальный логин и пароль, чтобы открыть рабочую страницу.</p>
+        {% include '_messages.html' %}
+        <form method="post" action="{{ url_for('login') }}" class="stack-form">
+          <label>Логин
+            <input name="username" autocomplete="username" required autofocus>
+          </label>
+          <label>Пароль
+            <input name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="primary wide" type="submit">Войти</button>
+        </form>
+        <div class="auth-divider"><span>или</span></div>
+        <a class="button-link secondary wide" href="{{ url_for('register') }}">Создать новый профиль</a>
+      </section>
+    </main>
+  {% elif mode == 'register' %}
+    <main class="auth-shell">
+      <section class="auth-card register-card">
+        <div class="brand-mark">＋</div>
+        <p class="eyebrow">NEW LOCAL PROFILE</p>
+        <h1>Создать новый профиль</h1>
+        <p class="lead">Выберите обычного пользователя или администратора. Пароль сохраняется только как защищённый хэш.</p>
+        {% include '_messages.html' %}
+        <form method="post" action="{{ url_for('register') }}" class="stack-form">
+          {% if not authorized_session %}
+            <fieldset class="auth-proof">
+              <legend>Подтверждение администратора</legend>
+              <label>Логин администратора
+                <input name="admin_username" autocomplete="username" required autofocus>
+              </label>
+              <label>Пароль администратора
+                <input name="admin_password" type="password" autocomplete="current-password" required>
+              </label>
+            </fieldset>
+          {% endif %}
+          <label>Логин нового профиля
+            <input name="username" autocomplete="off" required {% if authorized_session %}autofocus{% endif %}>
+          </label>
+          <label>Тип профиля
+            <select name="role">
+              <option value="user">Пользователь</option>
+              <option value="admin">Администратор</option>
+            </select>
+          </label>
+          <label>Новый пароль
+            <input name="password" type="password" autocomplete="new-password" minlength="6" required>
+          </label>
+          <label>Повторите новый пароль
+            <input name="password_confirm" type="password" autocomplete="new-password" minlength="6" required>
+          </label>
+          <button class="primary wide" type="submit">Создать профиль</button>
+          <a class="button-link ghost wide" href="{{ url_for('index') }}">Назад</a>
+        </form>
+      </section>
+    </main>
+  {% else %}
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-row">
+          <div class="brand-mark small">{ }</div>
+          <div>
+            <p class="eyebrow">LOCAL · ENCRYPTED · PRIVATE</p>
+            <h1>Secret Image JSON</h1>
+          </div>
+        </div>
+        <div class="account-actions">
+          <span class="profile-chip">{{ current_user }} · {% if current_role == 'admin' %}администратор{% else %}пользователь{% endif %}</span>
+          {% if current_role == 'admin' %}
+            <a class="button-link ghost" href="{{ url_for('register') }}">Новый профиль</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('logout') }}">
+            <button class="ghost" type="submit">Выйти</button>
+          </form>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <nav class="tabs" aria-label="Рабочие вкладки">
+          <button class="tab active" type="button" data-tab="create-panel">
+            <span>01</span> Создать секретное изображение
+          </button>
+          <button class="tab" type="button" data-tab="edit-panel">
+            <span>02</span> Открыть и редактировать
+          </button>
+        </nav>
+
+        <section id="create-panel" class="panel active">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">CREATE SECRET IMAGE</p>
+              <h2>Спрятать JSON в изображение</h2>
+            </div>
+            <p>Исходный JPG или PNG станет обычным JPG с зашифрованными данными.</p>
+          </div>
+
+          <form id="create-form" class="content-grid">
+            <div class="form-column">
+              <label class="file-picker" for="create-image">
+                <input id="create-image" name="image" type="file" accept="image/jpeg,image/png" required>
+                <span class="file-icon">＋</span>
+                <span><strong>Choose Image</strong><small id="create-file-name">JPG или PNG · до 50 MB</small></span>
+              </label>
+
+              <label class="field-label" for="create-text">Секретный текст</label>
+              <textarea id="create-text" name="text" class="code-editor plain-editor" spellcheck="true" required placeholder="Пишите здесь обычный текст. Можно использовать несколько строк, кавычки и любые символы — программа сама подготовит правильный JSON."></textarea>
+
+              <div class="inline-actions">
+                <label class="password-field">Password
+                  <input id="create-password" name="password" type="password" autocomplete="new-password" required>
+                </label>
+              </div>
+              <button id="create-submit" class="primary action-button" type="submit">Создать секретное изображение</button>
+            </div>
+
+            <aside id="created-card" class="result-card empty-state">
+              <div class="preview-frame">
+                <img id="created-preview" alt="Созданное секретное изображение">
+                <div class="preview-placeholder">{···}</div>
+              </div>
+              <h3 id="created-title">Здесь появится результат</h3>
+              <p id="created-copy">После создания изображение автоматически станет доступно во второй вкладке.</p>
+              <button id="download-created" class="secondary hidden" type="button">Скачать секретный JPG</button>
+            </aside>
+          </form>
+        </section>
+
+        <section id="edit-panel" class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">OPEN / EDIT SECRET IMAGE</p>
+              <h2>Расшифровать и изменить JSON</h2>
+            </div>
+            <p>Можно открыть файл с диска или сразу использовать результат первой вкладки.</p>
+          </div>
+
+          <div class="content-grid edit-grid">
+            <div class="form-column">
+              <label class="file-picker compact" for="extract-image">
+                <input id="extract-image" name="image" type="file" accept="image/jpeg">
+                <span class="file-icon">↗</span>
+                <span><strong>Choose Secret Image</strong><small id="extract-file-name">Выберите JPG с секретом</small></span>
+              </label>
+              <div id="created-source-note" class="source-note hidden">
+                <span>●</span> Используется изображение, созданное в первой вкладке
+              </div>
+              <div class="extract-row">
+                <label class="password-field">Password
+                  <input id="extract-password" type="password" autocomplete="current-password">
+                </label>
+                <button id="extract-submit" class="primary" type="button">Extract JSON</button>
+              </div>
+              <label class="field-label" for="extract-text">Расшифрованный текст · поле можно редактировать</label>
+              <textarea id="extract-text" class="code-editor plain-editor large" spellcheck="true" disabled placeholder="После расшифровки обычный текст появится здесь…"></textarea>
+              <div class="edit-actions">
+                <button id="save-text" class="secondary" type="button" disabled>Скачать текст (.txt)</button>
+                <button id="save-updated" class="primary" type="button" disabled>Сохранить обновлённое изображение</button>
+              </div>
+            </div>
+
+            <aside class="security-card">
+              <div class="shield">◇</div>
+              <p class="eyebrow">LOCAL PROCESSING</p>
+              <h3>Данные остаются на компьютере</h3>
+              <p>Приложение работает на <code>127.0.0.1</code>. Файлы не отправляются в интернет.</p>
+              <ul>
+                <li>PBKDF2HMAC + SHA-256</li>
+                <li>Fernet encryption</li>
+                <li>Пароль не сохраняется</li>
+              </ul>
+              <img id="edit-preview" class="edit-preview hidden" alt="Текущее секретное изображение">
+              <button id="download-updated" class="secondary hidden" type="button">Скачать обновлённый JPG</button>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  {% endif %}
+</body>
+</html>

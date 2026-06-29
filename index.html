@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#245e48">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Secret Image">
+  <title>Secret Image JSON</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./static/style.css">
+  <link rel="stylesheet" href="./pwa.css">
+</head>
+<body>
+  <main id="auth-view" class="auth-shell view">
+    <section id="setup-card" class="auth-card hidden">
+      <div class="brand-mark">{ }</div>
+      <p class="eyebrow">SECRET IMAGE JSON · PWA</p>
+      <h1>Создайте администратора</h1>
+      <p class="lead">Профиль хранится только на этом устройстве. Пароль сохраняется как соль и защищённый хэш.</p>
+      <form id="setup-form" class="stack-form">
+        <label>Логин<input id="setup-username" value="admin" required autocomplete="username"></label>
+        <label>Пароль<input id="setup-password" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Повторите пароль<input id="setup-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+        <button class="primary wide" type="submit">Создать аккаунт</button>
+      </form>
+    </section>
+
+    <section id="login-card" class="auth-card hidden">
+      <div class="brand-mark">{ }</div>
+      <p class="eyebrow">SECRET IMAGE JSON · PWA</p>
+      <h1>Вход</h1>
+      <p class="lead">Все данные и профили остаются локально на этом устройстве.</p>
+      <form id="login-form" class="stack-form">
+        <label>Логин<input id="login-username" required autocomplete="username"></label>
+        <label>Пароль<input id="login-password" type="password" required autocomplete="current-password"></label>
+        <button class="primary wide" type="submit">Войти</button>
+      </form>
+      <div class="auth-divider"><span>или</span></div>
+      <button id="open-register" class="secondary wide" type="button">Создать новый профиль</button>
+    </section>
+
+    <section id="register-card" class="auth-card register-card hidden">
+      <div class="brand-mark">＋</div>
+      <p class="eyebrow">NEW LOCAL PROFILE</p>
+      <h1>Новый профиль</h1>
+      <p class="lead">Новый профиль должен подтвердить существующий администратор.</p>
+      <form id="register-form" class="stack-form">
+        <fieldset id="admin-proof" class="auth-proof">
+          <legend>Подтверждение администратора</legend>
+          <label>Логин администратора<input id="proof-username" autocomplete="username"></label>
+          <label>Пароль администратора<input id="proof-password" type="password" autocomplete="current-password"></label>
+        </fieldset>
+        <label>Логин нового профиля<input id="new-username" required autocomplete="off"></label>
+        <label>Тип профиля
+          <select id="new-role"><option value="user">Пользователь</option><option value="admin">Администратор</option></select>
+        </label>
+        <label>Новый пароль<input id="new-password" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Повторите пароль<input id="new-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+        <button class="primary wide" type="submit">Создать профиль</button>
+        <button id="register-back" class="ghost wide" type="button">Назад</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="workspace-view" class="app-shell view hidden">
+    <header class="topbar">
+      <div class="brand-row">
+        <div class="brand-mark small">{ }</div>
+        <div><p class="eyebrow">OFFLINE · ENCRYPTED · PRIVATE</p><h1>Secret Image JSON</h1></div>
+      </div>
+      <div class="account-actions">
+        <span id="profile-chip" class="profile-chip"></span>
+        <button id="install-app" class="primary install-button" type="button">Установить</button>
+        <button id="new-profile" class="ghost" type="button">Новый профиль</button>
+        <button id="logout" class="ghost" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <nav class="tabs" aria-label="Рабочие вкладки">
+        <button class="tab active" type="button" data-tab="create-panel"><span>01</span> Создать</button>
+        <button class="tab" type="button" data-tab="edit-panel"><span>02</span> Открыть и изменить</button>
+      </nav>
+
+      <section id="create-panel" class="panel active">
+        <div class="panel-heading">
+          <div><p class="eyebrow">CREATE SECRET IMAGE</p><h2>Спрятать текст в изображение</h2></div>
+          <p>Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.</p>
+        </div>
+        <div class="content-grid">
+          <form id="create-form" class="form-column">
+            <label class="file-picker" for="create-image">
+              <input id="create-image" type="file" accept="image/jpeg,image/png" required>
+              <span class="file-icon">＋</span><span><strong>Выбрать изображение</strong><small id="create-file-name">JPG или PNG · до 50 MB</small></span>
+            </label>
+            <label class="field-label" for="create-text">Секретный текст</label>
+            <textarea id="create-text" class="code-editor plain-editor" required placeholder="Введите обычный текст. Можно использовать несколько строк и любые символы."></textarea>
+            <label class="password-field mobile-password">Пароль изображения<input id="create-password" type="password" required autocomplete="new-password"></label>
+            <button id="create-submit" class="primary action-button" type="submit">Создать секретное изображение</button>
+          </form>
+          <aside id="created-card" class="result-card empty-state">
+            <div class="preview-frame"><img id="created-preview" alt="Секретное изображение"><div class="preview-placeholder">{···}</div></div>
+            <h3 id="created-title">Здесь появится результат</h3>
+            <p id="created-copy">Готовый JPG можно скачать или сразу открыть во второй вкладке.</p>
+            <button id="download-created" class="secondary hidden" type="button">Скачать секретный JPG</button>
+          </aside>
+        </div>
+      </section>
+
+      <section id="edit-panel" class="panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">OPEN / EDIT</p><h2>Расшифровать и изменить текст</h2></div>
+          <p>Используйте результат первой вкладки или выберите сохранённый JPG.</p>
+        </div>
+        <div class="content-grid edit-grid">
+          <div class="form-column">
+            <label class="file-picker compact" for="extract-image">
+              <input id="extract-image" type="file" accept="image/jpeg">
+              <span class="file-icon">↗</span><span><strong>Выбрать секретный JPG</strong><small id="extract-file-name">Файл с зашифрованными данными</small></span>
+            </label>
+            <div id="created-source-note" class="source-note hidden"><span>●</span> Используется результат первой вкладки</div>
+            <div class="extract-row">
+              <label class="password-field">Пароль изображения<input id="extract-password" type="password" autocomplete="current-password"></label>
+              <button id="extract-submit" class="primary" type="button">Извлечь текст</button>
+            </div>
+            <label class="field-label" for="extract-text">Расшифрованный текст</label>
+            <textarea id="extract-text" class="code-editor plain-editor large" disabled placeholder="Текст появится здесь…"></textarea>
+            <div class="edit-actions">
+              <button id="save-text" class="secondary" type="button" disabled>Скачать .txt</button>
+              <button id="save-updated" class="primary" type="button" disabled>Сохранить изменения в JPG</button>
+            </div>
+          </div>
+          <aside class="security-card">
+            <div class="shield">◇</div><p class="eyebrow">ON-DEVICE</p><h3>Работает без сервера</h3>
+            <p>PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.</p>
+            <ul><li>Совместимо с Python V2</li><li>Работает офлайн</li><li>Пароль не сохраняется</li></ul>
+            <img id="edit-preview" class="edit-preview hidden" alt="Текущее изображение">
+            <button id="download-updated" class="secondary hidden" type="button">Скачать обновлённый JPG</button>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript>Для работы приложения требуется JavaScript.</noscript>
+  <script type="module" src="./pwa.js"></script>
+</body>
+</html>
