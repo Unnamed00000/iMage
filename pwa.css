@@ -1,0 +1,30 @@
+.view.hidden { display: none !important; }
+.install-button.hidden { display: none; }
+.mobile-password { margin-top: 15px; }
+
+@media (display-mode: standalone) {
+  .install-button { display: none !important; }
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@media (max-width: 700px) {
+  .topbar { align-items: flex-start; }
+  .brand-row h1 { font-size: 17px; }
+  .account-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .account-actions .profile-chip { display: none; }
+  .workspace { margin-bottom: 15px; border-radius: 18px; }
+  .tabs { position: sticky; top: 0; z-index: 3; }
+  .panel-heading { margin-bottom: 20px; }
+  .preview-frame, .preview-frame img { min-height: 190px; height: 190px; }
+}
+
+@media (max-width: 420px) {
+  .topbar { width: calc(100% - 24px); padding-top: 14px; }
+  .account-actions { gap: 5px; }
+  .account-actions button { min-height: 38px; padding: 7px 9px; font-size: 12px; }
+  .brand-mark.small { width: 39px; height: 39px; }
+  .workspace { width: calc(100% - 12px); }
+  .tab { font-size: 12px; }
+  .file-picker { padding: 12px; }
+  .code-editor { min-height: 220px; }
+}
