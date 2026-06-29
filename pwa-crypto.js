@@ -196,7 +196,7 @@ export async function createSecretPayload(jsonText, password) {
   return concatBytes(SECRET_MARKER, salt, token);
 }
 
-export async function extractSecretJson(imageBytes, password) {
+export function parseSecretPayload(imageBytes) {
   let marker = SECRET_MARKER;
   let position = findLastBytes(imageBytes, marker);
   let legacy = false;
@@ -214,8 +214,24 @@ export async function extractSecretJson(imageBytes, password) {
   const token = legacy
     ? base64ToBytes(decoder.decode(storedToken))
     : storedToken;
-  const key = await deriveKeyBytes(password, salt);
-  const plainBytes = await fernetDecryptRaw(key, token);
+  return { salt, token };
+}
+
+export async function verifySecretPassword(payload, password) {
+  try {
+    const key = await deriveKeyBytes(password, payload.salt);
+    const plainBytes = await fernetDecryptRaw(key, payload.token);
+    JSON.parse(decoder.decode(plainBytes));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function extractSecretJson(imageBytes, password) {
+  const payload = parseSecretPayload(imageBytes);
+  const key = await deriveKeyBytes(password, payload.salt);
+  const plainBytes = await fernetDecryptRaw(key, payload.token);
   const jsonText = decoder.decode(plainBytes);
   JSON.parse(jsonText);
   return jsonText;

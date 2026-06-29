@@ -1,9 +1,10 @@
-const CACHE_NAME = "secret-image-json-v1";
+const CACHE_NAME = "secret-image-json-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./pwa.js",
   "./pwa-crypto.js",
+  "./password-worker.js",
   "./pwa.css",
   "./static/style.css",
   "./manifest.webmanifest",
