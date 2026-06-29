@@ -1,6 +1,25 @@
 .view.hidden { display: none !important; }
 .install-button.hidden { display: none; }
 .mobile-password { margin-top: 15px; }
+.password-control { position: relative; display: block; width: 100%; }
+.password-control input { padding-right: 50px !important; }
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  width: 38px;
+  min-height: 38px;
+  padding: 0;
+  place-items: center;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+}
+.password-toggle:hover:not(:disabled) { background: rgba(36,94,72,.09); transform: none; }
+.password-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.password-toggle .eye-slash { opacity: 0; stroke-width: 2.2; }
+.password-toggle.revealed .eye-slash { opacity: 1; }
 .hex-settings {
   display: grid;
   width: 52px;
@@ -40,6 +59,11 @@
 .search-options legend { padding: 0 7px; color: var(--green); font-size: 12px; font-weight: 800; }
 .search-options label { display: flex; align-items: center; gap: 9px; font-size: 14px; }
 .search-options input { width: 18px; height: 18px; accent-color: var(--green); }
+.speed-control { display: grid; gap: 9px; margin-top: 15px; padding: 15px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); }
+.speed-control label { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--ink); font-size: 13px; font-weight: 750; }
+.speed-control strong { color: var(--green); font-variant-numeric: tabular-nums; }
+.speed-control input[type="range"] { width: 100%; min-height: 24px; padding: 0; border: 0; background: transparent; accent-color: var(--green); }
+.speed-control small { color: var(--muted); line-height: 1.45; }
 .search-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }
 .danger-button { border: 1px solid #c78179; background: #fff3f1; color: #8d302a; }
 .search-explanation { margin: 15px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
@@ -76,6 +100,32 @@ html[data-theme="dark"] select { background: #111813; color: var(--ink); }
 html[data-theme="dark"] .settings-section { background: #111813; }
 html[data-theme="dark"] .length-grid label { color: var(--ink); }
 html[data-theme="dark"] .danger-button { border-color: #8b504a; background: #3b211f; color: #ffc0b8; }
+html[data-theme="dark"] .stack-form label,
+html[data-theme="dark"] .password-field,
+html[data-theme="dark"] .field-label { color: var(--ink); }
+html[data-theme="dark"] .tab.active { color: var(--lime); }
+html[data-theme="dark"] .tab span { color: #b5c0b7; }
+html[data-theme="dark"] .file-picker strong,
+html[data-theme="dark"] .search-options legend,
+html[data-theme="dark"] .auth-proof legend,
+html[data-theme="dark"] .speed-control strong { color: var(--lime); }
+html[data-theme="dark"] .file-picker:hover { border-color: var(--green); background: #18251d; }
+html[data-theme="dark"] .secondary { border-color: #4c5a4f; background: #243128; color: var(--ink); }
+html[data-theme="dark"] .secondary:hover:not(:disabled) { border-color: #7c9b87; background: #304137; }
+html[data-theme="dark"] .primary { background: #83bc99; color: #07160e; }
+html[data-theme="dark"] .primary:hover:not(:disabled) { background: #a1d1b2; }
+html[data-theme="dark"] .hex-settings,
+html[data-theme="dark"] .file-icon { background: #245e48; color: #e0f5aa; }
+html[data-theme="dark"] .code-editor.plain-editor:disabled { background: #151d17; color: #9eaaa1; }
+html[data-theme="dark"] .preview-frame { background: #111813; }
+html[data-theme="dark"] .source-note { background: #21382a; color: #d9eddf; }
+html[data-theme="dark"] .source-note span { color: #9cd682; }
+html[data-theme="dark"] .speed-control { background: #111813; }
+html[data-theme="dark"] .password-toggle { color: #d5dfd7; }
+html[data-theme="dark"] .password-toggle:hover:not(:disabled) { background: rgba(212,238,152,.1); }
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color: #89958c; opacity: 1; }
+html[data-theme="dark"] .security-card .secondary { border-color: rgba(255,255,255,.32); background: rgba(255,255,255,.1); color: #fff; }
 
 @media (display-mode: standalone) {
   .install-button { display: none !important; }

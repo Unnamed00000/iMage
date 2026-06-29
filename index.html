@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#245e48">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Secret Image">
-  <title>Secret Image JSON</title>
+  <meta name="apple-mobile-web-app-title" content="iMage">
+  <title>iMage</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="./icon-192.png">
@@ -18,7 +18,7 @@
   <main id="auth-view" class="auth-shell view">
     <section id="setup-card" class="auth-card hidden">
       <div class="brand-mark">{ }</div>
-      <p class="eyebrow">SECRET IMAGE JSON · PWA</p>
+      <p class="eyebrow">iMage · PWA</p>
       <h1>Создайте администратора</h1>
       <p class="lead">Профиль хранится только на этом устройстве. Пароль сохраняется как соль и защищённый хэш.</p>
       <form id="setup-form" class="stack-form">
@@ -31,7 +31,7 @@
 
     <section id="login-card" class="auth-card hidden">
       <div class="brand-mark">{ }</div>
-      <p class="eyebrow">SECRET IMAGE JSON · PWA</p>
+      <p class="eyebrow">iMage · PWA</p>
       <h1>Вход</h1>
       <p class="lead">Все данные и профили остаются локально на этом устройстве.</p>
       <form id="login-form" class="stack-form">
@@ -70,7 +70,7 @@
     <header class="topbar">
       <div class="brand-row">
         <div class="brand-mark small">{ }</div>
-        <div><p class="eyebrow">OFFLINE · ENCRYPTED · PRIVATE</p><h1>Secret Image JSON</h1></div>
+        <div><p class="eyebrow">OFFLINE · ENCRYPTED · PRIVATE</p><h1>iMage</h1></div>
       </div>
       <button id="settings-button" class="hex-settings" type="button" aria-label="Настройки">⚙</button>
     </header>
@@ -84,14 +84,14 @@
 
       <section id="create-panel" class="panel active">
         <div class="panel-heading">
-          <div><p class="eyebrow">CREATE SECRET IMAGE</p><h2>Спрятать текст в изображение</h2></div>
+          <div><p class="eyebrow">CREATE iMage</p><h2>Спрятать текст в изображение</h2></div>
           <p>Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.</p>
         </div>
         <div class="content-grid">
           <form id="create-form" class="form-column">
             <label class="file-picker" for="create-image">
               <input id="create-image" type="file" accept="image/jpeg,image/png" required>
-              <span class="file-icon">＋</span><span><strong>Выбрать изображение</strong><small id="create-file-name">JPG или PNG · до 50 MB</small></span>
+              <span class="file-icon">＋</span><span><strong>Выбрать изображение</strong><small id="create-file-name">JPG или PNG</small></span>
             </label>
             <label class="field-label" for="create-text">Секретный текст</label>
             <textarea id="create-text" class="code-editor plain-editor" required placeholder="Введите обычный текст. Можно использовать несколько строк и любые символы."></textarea>
@@ -163,6 +163,11 @@
               <label><input id="search-masks" type="checkbox" checked> Проверить маски</label>
               <label><input id="search-brute" type="checkbox"> Полный перебор</label>
             </fieldset>
+            <div class="speed-control">
+              <label for="search-intensity"><span>Скорость поиска</span><strong><span id="search-intensity-value">5</span> / 10</strong></label>
+              <input id="search-intensity" type="range" min="1" max="10" value="5" step="1">
+              <small id="search-intensity-hint">Чем выше значение, тем больше нагрузка на устройство.</small>
+            </div>
             <button id="search-start" class="primary action-button" type="button">Узнать пароль</button>
             <div class="search-actions">
               <button id="search-pause" class="secondary" type="button" disabled>Пауза</button>
@@ -195,8 +200,8 @@
         <div><strong>Тема</strong><small>Светлое или тёмное оформление</small></div>
         <label class="theme-switch"><input id="theme-toggle" type="checkbox"><span></span></label>
       </div>
-      <label class="settings-section settings-select"><span><strong>Язык</strong><small>Язык интерфейса приложения</small></span><select id="language-select"><option value="ru">Русский</option><option value="en">English</option></select></label>
-      <div class="settings-section app-about"><div><strong>Secret Image JSON</strong><small>Версия PWA · обработка только на устройстве</small></div><span class="version-badge">v3</span></div>
+      <label class="settings-section settings-select"><span><strong>Язык</strong><small>Язык интерфейса приложения</small></span><select id="language-select"><option value="ru">Русский</option><option value="en">English</option><option value="da">Dansk</option></select></label>
+      <div class="settings-section app-about"><div><strong>iMage</strong><small>Версия PWA · обработка только на устройстве</small></div><span class="version-badge">v4</span></div>
       <div class="settings-footer">
         <button id="install-app" class="primary install-button" type="button">Установить приложение</button>
         <button id="force-update" class="secondary" type="button">Принудительно обновить</button>

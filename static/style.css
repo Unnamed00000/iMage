@@ -95,7 +95,7 @@ h3 { font-size: 18px; }
   font-weight: 700;
 }
 
-input[type="text"], input[type="password"], input:not([type]), select {
+input[type="text"], input[type="password"], input[type="number"], input:not([type]), select {
   width: 100%;
   min-height: 46px;
   padding: 10px 13px;

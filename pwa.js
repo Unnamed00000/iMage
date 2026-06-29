@@ -8,7 +8,6 @@ const USERS_KEY = "secret-image-json-users-v2";
 const SESSION_KEY = "secret-image-json-session-v2";
 const THEME_KEY = "secret-image-json-theme-v1";
 const LANGUAGE_KEY = "secret-image-json-language-v1";
-const MAX_SIZE = 50 * 1024 * 1024;
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 let currentUser = null;
@@ -35,12 +34,13 @@ const TRANSLATIONS = {
   ru: {
     tabs: ["Создать", "Открыть и изменить", "Поиск пароля"],
     headings: ["Спрятать текст в изображение", "Расшифровать и изменить текст", "Поиск пароля"],
-    choose: "Выбрать изображение", secretJpg: "Секретный JPG",
+    choose: "Выбрать изображение", secretJpg: "Секретный JPG", imageHint: "JPG или PNG",
     min: "Минимальная длина пароля", max: "Максимальная длина пароля",
     modes: "Режимы поиска", options: ["Проверить цифры", "Проверить популярные пароли", "Проверить популярные комбинации", "Проверить маски", "Полный перебор"],
     start: "Узнать пароль", pause: "Пауза", resume: "Продолжить", stop: "Остановить",
     explanation: "Программа не достаёт пароль напрямую из файла. Она проверяет разные варианты и показывает пароль только если подходящий вариант найден.",
     progress: ["Текущий режим поиска", "Текущий проверяемый пароль", "Вариантов проверено", "Скорость проверки", "Примерное оставшееся время"],
+    progressTitle: "ПРОГРЕСС", settingsEyebrow: "НАСТРОЙКИ ПРИЛОЖЕНИЯ",
     waiting: "Ожидание", resultPlaceholder: "Результат появится здесь",
     settings: "Настройки", theme: "Тема", themeHint: "Светлое или тёмное оформление",
     language: "Язык", languageHint: "Язык интерфейса приложения",
@@ -59,16 +59,19 @@ const TRANSLATIONS = {
     createCopy: ["Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.", "Выбрать изображение", "Секретный текст", "Введите обычный текст. Можно использовать несколько строк и любые символы.", "Пароль изображения", "Здесь появится результат", "Готовый JPG можно скачать или сразу открыть во второй вкладке.", "Скачать секретный JPG"],
     editCopy: ["Используйте результат первой вкладки или выберите сохранённый JPG.", "Выбрать секретный JPG", "Файл с зашифрованными данными", "Используется результат первой вкладки", "Пароль изображения", "Расшифрованный текст", "Текст появится здесь…", "Работает без сервера", "PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.", "Совместимо с Python V2", "Работает офлайн", "Пароль не сохраняется", "Скачать обновлённый JPG"],
     searchDescription: "Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.",
+    speedLabel: "Скорость поиска", speedHint: "Чем выше значение, тем больше нагрузка на устройство.", speedRate: "паролей/с",
+    runtime: { updating: "Обновление…", updateFailed: "Не удалось обновить приложение", lengthError: "Укажите длину пароля от 1 до 12", modeError: "Выберите хотя бы один режим поиска", preparing: "Подготовка", searching: "Поиск выполняется…", paused: "Пауза", found: "Пароль найден", notFound: "Пароль не найден", stopped: "Остановлено", searchStopped: "Поиск остановлен", missingSecret: "Неверный пароль или секрет не найден", searchError: "Ошибка поиска пароля", veryLong: "очень долго", lessSecond: "меньше секунды", showPassword: "Показать пароль", hidePassword: "Скрыть пароль" },
   },
   en: {
     tabs: ["Create", "Open and edit", "Password search"],
     headings: ["Hide text in an image", "Decrypt and edit text", "Password search"],
-    choose: "Choose image", secretJpg: "Secret JPG",
+    choose: "Choose image", secretJpg: "Secret JPG", imageHint: "JPG or PNG",
     min: "Minimum password length", max: "Maximum password length",
     modes: "Search modes", options: ["Check digits", "Check popular passwords", "Check popular combinations", "Check masks", "Full brute force"],
     start: "Find password", pause: "Pause", resume: "Continue", stop: "Stop",
     explanation: "The app cannot read a password directly from the file. It tries different candidates and shows a password only when a matching one is found.",
     progress: ["Current search mode", "Current password candidate", "Candidates checked", "Check speed", "Estimated time remaining"],
+    progressTitle: "PROGRESS", settingsEyebrow: "APP SETTINGS",
     waiting: "Waiting", resultPlaceholder: "The result will appear here",
     settings: "Settings", theme: "Theme", themeHint: "Light or dark appearance",
     language: "Language", languageHint: "Application interface language",
@@ -87,11 +90,55 @@ const TRANSLATIONS = {
     createCopy: ["Processing happens on this device. The image and password are never uploaded.", "Choose image", "Secret text", "Enter plain text. You can use multiple lines and any characters.", "Image password", "Your result will appear here", "Download the finished JPG or open it directly in the second tab.", "Download secret JPG"],
     editCopy: ["Use the result from the first tab or select a saved JPG.", "Choose secret JPG", "File with encrypted data", "Using the result from the first tab", "Image password", "Decrypted text", "Text will appear here…", "Works without a server", "PBKDF2-SHA256 and Fernet run with Web Crypto directly on the device.", "Compatible with Python V2", "Works offline", "Password is not saved", "Download updated JPG"],
     searchDescription: "The check runs locally and does not send the image or recovered password to the internet.",
+    speedLabel: "Search speed", speedHint: "Higher values use more processing power on the device.", speedRate: "passwords/s",
+    runtime: { updating: "Updating…", updateFailed: "App update failed", lengthError: "Set password length from 1 to 12", modeError: "Select at least one search mode", preparing: "Preparing", searching: "Searching…", paused: "Paused", found: "Password found", notFound: "Password not found", stopped: "Stopped", searchStopped: "Search stopped", missingSecret: "Wrong password or secret not found", searchError: "Password search error", veryLong: "very long", lessSecond: "less than a second", showPassword: "Show password", hidePassword: "Hide password" },
+  },
+  da: {
+    tabs: ["Opret", "Åbn og rediger", "Søg adgangskode"],
+    headings: ["Skjul tekst i et billede", "Dekryptér og rediger tekst", "Søg efter adgangskode"],
+    choose: "Vælg billede", secretJpg: "Hemmelig JPG", imageHint: "JPG eller PNG",
+    min: "Mindste adgangskodelængde", max: "Største adgangskodelængde",
+    modes: "Søgemetoder", options: ["Kontrollér cifre", "Kontrollér populære adgangskoder", "Kontrollér populære kombinationer", "Kontrollér mønstre", "Fuld brute force"],
+    start: "Find adgangskode", pause: "Pause", resume: "Fortsæt", stop: "Stop",
+    explanation: "Programmet henter ikke adgangskoden direkte fra filen. Det afprøver forskellige muligheder og viser kun adgangskoden, hvis der findes et match.",
+    progress: ["Aktuel søgemetode", "Adgangskode der afprøves", "Muligheder afprøvet", "Testhastighed", "Anslået resterende tid"],
+    progressTitle: "FREMSKRIDT", settingsEyebrow: "APPINDSTILLINGER",
+    waiting: "Venter", resultPlaceholder: "Resultatet vises her",
+    settings: "Indstillinger", theme: "Tema", themeHint: "Lyst eller mørkt udseende",
+    language: "Sprog", languageHint: "Sprog i appens brugerflade",
+    appHint: "PWA-version · behandling kun på enheden",
+    install: "Installér app", update: "Gennemtving opdatering", newProfile: "Opret ny profil", logout: "Log ud",
+    create: "Opret hemmeligt billede", extract: "Udpak tekst", saveText: "Hent .txt", saveImage: "Gem ændringer i JPG",
+    auth: {
+      setupTitle: "Opret en administrator", setupLead: "Profilen gemmes kun på denne enhed. Adgangskoden gemmes som et beskyttet hash med salt.",
+      loginTitle: "Log ind", loginLead: "Alle data og profiler forbliver lokalt på denne enhed.",
+      registerTitle: "Ny profil", registerLead: "En eksisterende administrator skal godkende en ny profil.",
+      setupLabels: ["Brugernavn", "Adgangskode", "Gentag adgangskode"], loginLabels: ["Brugernavn", "Adgangskode"],
+      registerLabels: ["Administratorens brugernavn", "Administratorens adgangskode", "Den nye profils brugernavn", "Profiltype", "Ny adgangskode", "Gentag adgangskode"],
+      setupButton: "Opret konto", loginButton: "Log ind", or: "eller", proof: "Administratorgodkendelse", createProfile: "Opret profil", back: "Tilbage",
+      roles: ["Bruger", "Administrator"],
+    },
+    createCopy: ["Behandlingen foregår på enheden. Billedet og adgangskoden uploades aldrig.", "Vælg billede", "Hemmelig tekst", "Skriv almindelig tekst. Du kan bruge flere linjer og alle tegn.", "Billedets adgangskode", "Dit resultat vises her", "Hent den færdige JPG, eller åbn den direkte i den anden fane.", "Hent hemmelig JPG"],
+    editCopy: ["Brug resultatet fra den første fane, eller vælg en gemt JPG.", "Vælg hemmelig JPG", "Fil med krypterede data", "Bruger resultatet fra den første fane", "Billedets adgangskode", "Dekrypteret tekst", "Teksten vises her…", "Virker uden en server", "PBKDF2-SHA256 og Fernet kører med Web Crypto direkte på enheden.", "Kompatibel med Python V2", "Virker offline", "Adgangskoden gemmes ikke", "Hent opdateret JPG"],
+    searchDescription: "Kontrollen kører lokalt og sender ikke billedet eller den fundne adgangskode til internettet.",
+    speedLabel: "Søgehastighed", speedHint: "En højere værdi bruger mere processorkraft på enheden.", speedRate: "adgangskoder/s",
+    runtime: { updating: "Opdaterer…", updateFailed: "Appen kunne ikke opdateres", lengthError: "Angiv en adgangskodelængde fra 1 til 12", modeError: "Vælg mindst én søgemetode", preparing: "Forbereder", searching: "Søger…", paused: "Pause", found: "Adgangskode fundet", notFound: "Adgangskoden blev ikke fundet", stopped: "Stoppet", searchStopped: "Søgningen er stoppet", missingSecret: "Forkert adgangskode eller ingen hemmelighed fundet", searchError: "Fejl under adgangskodesøgning", veryLong: "meget lang tid", lessSecond: "under ét sekund", showPassword: "Vis adgangskode", hidePassword: "Skjul adgangskode" },
   },
 };
 
+const MESSAGES = {
+  ru: { enterLogin: "Введите логин", passwordMin: "Пароль должен содержать минимум 6 символов", mismatch: "Пароли не совпадают", invalidLogin: "Неверный логин или пароль", invalidAdmin: "Неверные данные администратора", adminRequired: "Требуются права администратора", profileExists: "Профиль с таким логином уже существует", profileCreated: (name) => `Профиль ${name} создан`, chooseImage: "Выберите изображение", convertFailed: "Не удалось преобразовать изображение", createdTitle: "Секретное изображение создано", readyDownload: (name) => `${name} готов к скачиванию.`, encrypting: "Шифрование…", created: "Секретное изображение создано", decrypting: "Расшифровка…", decrypted: "Текст расшифрован", saving: "Сохранение…", updated: "Обновлённое изображение создано", iosInstall: "iPhone: нажмите Поделиться → На экран Домой", browserInstall: "Откройте меню браузера и выберите «Установить приложение»", offlineFailed: "Не удалось включить офлайн-режим" },
+  en: { enterLogin: "Enter a username", passwordMin: "The password must contain at least 6 characters", mismatch: "Passwords do not match", invalidLogin: "Wrong username or password", invalidAdmin: "Wrong administrator credentials", adminRequired: "Administrator rights are required", profileExists: "A profile with this username already exists", profileCreated: (name) => `Profile ${name} created`, chooseImage: "Choose an image", convertFailed: "The image could not be converted", createdTitle: "Secret image created", readyDownload: (name) => `${name} is ready to download.`, encrypting: "Encrypting…", created: "Secret image created", decrypting: "Decrypting…", decrypted: "Text decrypted", saving: "Saving…", updated: "Updated image created", iosInstall: "iPhone: tap Share → Add to Home Screen", browserInstall: "Open the browser menu and select “Install app”", offlineFailed: "Offline mode could not be enabled" },
+  da: { enterLogin: "Indtast et brugernavn", passwordMin: "Adgangskoden skal indeholde mindst 6 tegn", mismatch: "Adgangskoderne er ikke ens", invalidLogin: "Forkert brugernavn eller adgangskode", invalidAdmin: "Forkerte administratoroplysninger", adminRequired: "Administratorrettigheder er påkrævet", profileExists: "Der findes allerede en profil med dette brugernavn", profileCreated: (name) => `Profilen ${name} er oprettet`, chooseImage: "Vælg et billede", convertFailed: "Billedet kunne ikke konverteres", createdTitle: "Det hemmelige billede er oprettet", readyDownload: (name) => `${name} er klar til at blive hentet.`, encrypting: "Krypterer…", created: "Det hemmelige billede er oprettet", decrypting: "Dekrypterer…", decrypted: "Teksten er dekrypteret", saving: "Gemmer…", updated: "Det opdaterede billede er oprettet", iosInstall: "iPhone: tryk på Del → Føj til hjemmeskærm", browserInstall: "Åbn browsermenuen, og vælg “Installér app”", offlineFailed: "Offlinetilstand kunne ikke aktiveres" },
+};
+
 function language() {
-  return localStorage.getItem(LANGUAGE_KEY) === "en" ? "en" : "ru";
+  const value = localStorage.getItem(LANGUAGE_KEY);
+  return ["ru", "en", "da"].includes(value) ? value : "ru";
+}
+
+function messages() {
+  return MESSAGES[language()];
 }
 
 function replaceLabelText(label, value) {
@@ -99,8 +146,49 @@ function replaceLabelText(label, value) {
   if (node) node.textContent = value;
 }
 
+function updatePasswordToggle(button) {
+  const input = button.parentElement.querySelector("input");
+  const fieldLabel = input.closest("label");
+  const labelNode = fieldLabel && [...fieldLabel.childNodes]
+    .find((item) => item.nodeType === Node.TEXT_NODE && item.textContent.trim());
+  if (labelNode) input.setAttribute("aria-label", labelNode.textContent.trim());
+  const revealed = input.type === "text";
+  button.classList.toggle("revealed", revealed);
+  const label = TRANSLATIONS[language()].runtime[revealed ? "hidePassword" : "showPassword"];
+  button.setAttribute("aria-label", label);
+  button.title = label;
+}
+
+function installPasswordToggles() {
+  $$('input[type="password"]').forEach((input) => {
+    if (input.parentElement.classList.contains("password-control")) return;
+    const wrapper = document.createElement("span");
+    wrapper.className = "password-control";
+    input.parentNode.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "password-toggle";
+    button.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/><path class="eye-slash" d="m4 3 16 18"/></svg>';
+    button.addEventListener("click", () => {
+      input.type = input.type === "password" ? "text" : "password";
+      updatePasswordToggle(button);
+      input.focus();
+    });
+    wrapper.appendChild(button);
+    updatePasswordToggle(button);
+  });
+}
+
+function concealPasswords() {
+  $$(".password-control input").forEach((input) => {
+    input.type = "password";
+    updatePasswordToggle(input.parentElement.querySelector(".password-toggle"));
+  });
+}
+
 function applyLanguage(code) {
-  const selected = code === "en" ? "en" : "ru";
+  const selected = ["ru", "en", "da"].includes(code) ? code : "ru";
   const copy = TRANSLATIONS[selected];
   localStorage.setItem(LANGUAGE_KEY, selected);
   document.documentElement.lang = selected;
@@ -129,6 +217,7 @@ function applyLanguage(code) {
   panelDescriptions[1].textContent = copy.editCopy[0];
   panelDescriptions[2].textContent = copy.searchDescription;
   $("#create-image").closest("label").querySelector("strong").textContent = copy.createCopy[1];
+  if (!$("#create-image").files[0]) $("#create-file-name").textContent = copy.imageHint;
   $("label[for='create-text']").textContent = copy.createCopy[2];
   $("#create-text").placeholder = copy.createCopy[3];
   replaceLabelText($("#create-password").closest("label"), copy.createCopy[4]);
@@ -154,17 +243,24 @@ function applyLanguage(code) {
   replaceLabelText(lengthLabels[1], copy.max);
   $(".search-options legend").textContent = copy.modes;
   [...$$(".search-options label")].forEach((label, index) => replaceLabelText(label, ` ${copy.options[index]}`));
+  $(".speed-control label > span").textContent = copy.speedLabel;
+  $("#search-intensity-hint").textContent = copy.speedHint;
   $("#search-start").textContent = copy.start;
   $("#search-pause").textContent = copy.pause;
   $("#search-resume").textContent = copy.resume;
   $("#search-stop").textContent = copy.stop;
   $(".search-explanation").textContent = copy.explanation;
+  $(".progress-card .eyebrow").textContent = copy.progressTitle;
   [...$$(".progress-list dt")].forEach((item, index) => { item.textContent = copy.progress[index]; });
   if (!passwordWorker) {
     $("#search-mode").textContent = copy.waiting;
     $("#search-result").textContent = copy.resultPlaceholder;
+    $("#search-speed").textContent = `0 ${copy.speedRate}`;
   }
+  $$(".password-toggle").forEach(updatePasswordToggle);
   $("#settings-title").textContent = copy.settings;
+  $(".settings-header .eyebrow").textContent = copy.settingsEyebrow;
+  $("#settings-button").setAttribute("aria-label", copy.settings);
   const sections = $$(".settings-section");
   sections[0].querySelector("strong").textContent = copy.theme;
   sections[0].querySelector("small").textContent = copy.themeHint;
@@ -217,8 +313,8 @@ function sameBytes(a, b) {
 
 async function makeUser(username, password, role) {
   username = username.trim();
-  if (!username) throw new Error("Введите логин");
-  if (password.length < 6) throw new Error("Пароль должен содержать минимум 6 символов");
+  if (!username) throw new Error(messages().enterLogin);
+  if (password.length < 6) throw new Error(messages().passwordMin);
   const salt = randomBytes(16);
   const hash = await deriveKeyBytes(password, salt, PBKDF2_ITERATIONS);
   return { username, role, salt: bytesToBase64(salt), passwordHash: bytesToBase64(hash) };
@@ -233,6 +329,7 @@ async function authenticate(username, password) {
 }
 
 function authCard(id) {
+  concealPasswords();
   $("#auth-view").classList.remove("hidden");
   $("#workspace-view").classList.add("hidden");
   ["setup-card", "login-card", "register-card"].forEach((name) =>
@@ -271,7 +368,7 @@ $("#setup-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     if ($("#setup-password").value !== $("#setup-confirm").value)
-      throw new Error("Пароли не совпадают");
+      throw new Error(messages().mismatch);
     const user = await makeUser($("#setup-username").value, $("#setup-password").value, "admin");
     localStorage.setItem(USERS_KEY, JSON.stringify([user]));
     showWorkspace(user);
@@ -282,7 +379,7 @@ $("#login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   try {
     const user = await authenticate($("#login-username").value, $("#login-password").value);
-    if (!user) throw new Error("Неверный логин или пароль");
+    if (!user) throw new Error(messages().invalidLogin);
     showWorkspace(user);
   } catch (error) { toast(error.message, true); }
 });
@@ -297,20 +394,20 @@ $("#register-form").addEventListener("submit", async (event) => {
   try {
     if (!registerFromWorkspace) {
       const admin = await authenticate($("#proof-username").value, $("#proof-password").value);
-      if (!admin || admin.role !== "admin") throw new Error("Неверные данные администратора");
+      if (!admin || admin.role !== "admin") throw new Error(messages().invalidAdmin);
     } else if (!currentUser || currentUser.role !== "admin") {
-      throw new Error("Требуются права администратора");
+      throw new Error(messages().adminRequired);
     }
     if ($("#new-password").value !== $("#new-confirm").value)
-      throw new Error("Пароли не совпадают");
+      throw new Error(messages().mismatch);
     const allUsers = users();
     const username = $("#new-username").value.trim();
     if (allUsers.some((item) => item.username.toLocaleLowerCase() === username.toLocaleLowerCase()))
-      throw new Error("Профиль с таким логином уже существует");
+      throw new Error(messages().profileExists);
     const user = await makeUser(username, $("#new-password").value, $("#new-role").value);
     allUsers.push(user);
     localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
-    toast("Профиль " + user.username + " создан");
+    toast(messages().profileCreated(user.username));
     registerFromWorkspace && currentUser ? showWorkspace(currentUser) : showLogin();
   } catch (error) { toast(error.message, true); }
 });
@@ -337,19 +434,20 @@ $("#language-select").addEventListener("change", (event) =>
 
 $("#force-update").addEventListener("click", async () => {
   const button = $("#force-update");
-  busy(button, true, language() === "ru" ? "Обновление…" : "Updating…");
+  busy(button, true, TRANSLATIONS[language()].runtime.updating);
   try {
     if ("serviceWorker" in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(registrations.map((registration) => registration.update()));
     }
     const names = await caches.keys();
-    await Promise.all(names.filter((name) => name.startsWith("secret-image-json-"))
+    await Promise.all(names.filter((name) =>
+      name.startsWith("secret-image-json-") || name.startsWith("image-pwa-"))
       .map((name) => caches.delete(name)));
     window.location.reload();
   } catch {
     busy(button, false);
-    toast(language() === "ru" ? "Не удалось обновить приложение" : "App update failed", true);
+    toast(TRANSLATIONS[language()].runtime.updateFailed, true);
   }
 });
 
@@ -372,8 +470,7 @@ function busy(button, state, label) {
 }
 
 function checkedFile(file) {
-  if (!file) throw new Error("Выберите изображение");
-  if (file.size > MAX_SIZE) throw new Error("Изображение больше 50 MB");
+  if (!file) throw new Error(messages().chooseImage);
   return file;
 }
 
@@ -393,7 +490,7 @@ async function jpegBytes(file) {
     context.drawImage(image, 0, 0);
     const blob = await new Promise((resolve, reject) =>
       canvas.toBlob((value) => value ? resolve(value) :
-        reject(new Error("Не удалось преобразовать изображение")), "image/jpeg", 0.95));
+        reject(new Error(messages().convertFailed)), "image/jpeg", 0.95));
     return new Uint8Array(await blob.arrayBuffer());
   } finally { URL.revokeObjectURL(url); }
 }
@@ -422,8 +519,8 @@ function showPreview(blob, name, created = false) {
   if (created) {
     $("#created-preview").src = url;
     $("#created-card").classList.add("has-image");
-    $("#created-title").textContent = "Секретное изображение создано";
-    $("#created-copy").textContent = name + " готов к скачиванию.";
+    $("#created-title").textContent = messages().createdTitle;
+    $("#created-copy").textContent = messages().readyDownload(name);
     $("#download-created").classList.remove("hidden");
   }
 }
@@ -436,7 +533,7 @@ function selectedImage() {
 
 $("#create-image").addEventListener("change", (event) => {
   const file = event.target.files[0];
-  $("#create-file-name").textContent = file ? file.name : "JPG или PNG · до 50 MB";
+  $("#create-file-name").textContent = file ? file.name : TRANSLATIONS[language()].imageHint;
 });
 
 $("#extract-image").addEventListener("change", (event) => {
@@ -456,7 +553,7 @@ $("#extract-image").addEventListener("change", (event) => {
 $("#create-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const button = $("#create-submit");
-  busy(button, true, "Шифрование…");
+  busy(button, true, messages().encrypting);
   try {
     const source = checkedFile($("#create-image").files[0]);
     const jpeg = await jpegBytes(source);
@@ -464,7 +561,7 @@ $("#create-form").addEventListener("submit", async (event) => {
       plainTextToJson($("#create-text").value), $("#create-password").value);
     const blob = new Blob([concatBytes(jpeg, payload)], { type: "image/jpeg" });
     showPreview(blob, source.name.replace(/\.[^.]+$/, "") + "_secret.jpg", true);
-    toast("Секретное изображение создано");
+    toast(messages().created);
   } catch (error) { toast(error.message, true); }
   finally { busy(button, false); }
 });
@@ -475,7 +572,7 @@ $("#download-created").addEventListener("click", () => {
 
 $("#extract-submit").addEventListener("click", async () => {
   const button = $("#extract-submit");
-  busy(button, true, "Расшифровка…");
+  busy(button, true, messages().decrypting);
   try {
     const image = checkedFile(selectedImage());
     const json = await extractSecretJson(
@@ -484,8 +581,8 @@ $("#extract-submit").addEventListener("click", async () => {
     $("#extract-text").disabled = false;
     $("#save-text").disabled = false;
     $("#save-updated").disabled = false;
-    toast("Текст расшифрован");
-  } catch { toast("Неверный пароль или секрет не найден", true); }
+    toast(messages().decrypted);
+  } catch { toast(TRANSLATIONS[language()].runtime.missingSecret, true); }
   finally { busy(button, false); }
 });
 
@@ -495,7 +592,7 @@ $("#save-text").addEventListener("click", () =>
 
 $("#save-updated").addEventListener("click", async () => {
   const button = $("#save-updated");
-  busy(button, true, "Сохранение…");
+  busy(button, true, messages().saving);
   try {
     const jpeg = await jpegBytes(checkedFile(selectedImage()));
     const payload = await createSecretPayload(
@@ -503,7 +600,7 @@ $("#save-updated").addEventListener("click", async () => {
     const blob = new Blob([concatBytes(jpeg, payload)], { type: "image/jpeg" });
     showPreview(blob, currentSecretName.replace(/\.jpg$/i, "") + "_updated.jpg");
     $("#download-updated").classList.remove("hidden");
-    toast("Обновлённое изображение создано");
+    toast(messages().updated);
   } catch (error) { toast(error.message, true); }
   finally { busy(button, false); }
 });
@@ -514,18 +611,22 @@ $("#download-updated").addEventListener("click", () => {
 
 function formatCount(value) {
   if (!Number.isFinite(value)) return "∞";
-  return new Intl.NumberFormat(language() === "ru" ? "ru-RU" : "en-US", {
+  const locale = { ru: "ru-RU", en: "en-US", da: "da-DK" }[language()];
+  return new Intl.NumberFormat(locale, {
     maximumFractionDigits: 0,
     notation: value >= 1e9 ? "compact" : "standard",
   }).format(value);
 }
 
 function formatDuration(seconds) {
-  if (!Number.isFinite(seconds) || seconds > 3153600000) return language() === "ru" ? "очень долго" : "very long";
-  if (seconds < 2) return language() === "ru" ? "меньше секунды" : "less than a second";
-  const units = language() === "ru"
-    ? [[86400, "д"], [3600, "ч"], [60, "мин"], [1, "с"]]
-    : [[86400, "d"], [3600, "h"], [60, "min"], [1, "s"]];
+  const copy = TRANSLATIONS[language()].runtime;
+  if (!Number.isFinite(seconds) || seconds > 3153600000) return copy.veryLong;
+  if (seconds < 2) return copy.lessSecond;
+  const units = {
+    ru: [[86400, "д"], [3600, "ч"], [60, "мин"], [1, "с"]],
+    en: [[86400, "d"], [3600, "h"], [60, "min"], [1, "s"]],
+    da: [[86400, "d"], [3600, "t"], [60, "min"], [1, "s"]],
+  }[language()];
   let remaining = Math.ceil(seconds);
   const parts = [];
   for (const [size, suffix] of units) {
@@ -533,8 +634,30 @@ function formatDuration(seconds) {
     if (amount && parts.length < 2) parts.push(`${amount} ${suffix}`);
     remaining %= size;
   }
-  return parts.join(" ") || (language() === "ru" ? "меньше секунды" : "less than a second");
+  return parts.join(" ") || copy.lessSecond;
 }
+
+const MODE_NAMES = {
+  "Популярные пароли": { ru: "Популярные пароли", en: "Popular passwords", da: "Populære adgangskoder" },
+  "Популярные комбинации": { ru: "Популярные комбинации", en: "Popular combinations", da: "Populære kombinationer" },
+  "Маски": { ru: "Маски", en: "Masks", da: "Mønstre" },
+  "Цифровой перебор": { ru: "Цифровой перебор", en: "Digit search", da: "Ciffersøgning" },
+  "Полный перебор": { ru: "Полный перебор", en: "Full brute force", da: "Fuld brute force" },
+};
+
+function localizedMode(value) {
+  return MODE_NAMES[value]?.[language()] || value;
+}
+
+function searchIntensity() {
+  return Math.min(10, Math.max(1, Number.parseInt($("#search-intensity").value, 10) || 1));
+}
+
+$("#search-intensity").addEventListener("input", () => {
+  const value = searchIntensity();
+  $("#search-intensity-value").textContent = value;
+  passwordWorker?.postMessage({ type: "speed", value });
+});
 
 function setSearchButtons(state) {
   const running = state === "running";
@@ -561,11 +684,12 @@ $("#search-image").addEventListener("change", (event) => {
 
 $("#search-start").addEventListener("click", async () => {
   try {
+    const text = TRANSLATIONS[language()];
     const image = checkedFile(selectedSearchFile);
     const min = Number.parseInt($("#search-min").value, 10);
     const max = Number.parseInt($("#search-max").value, 10);
     if (!Number.isInteger(min) || !Number.isInteger(max) || min < 1 || max > 12 || min > max)
-      throw new Error(language() === "ru" ? "Укажите длину пароля от 1 до 12" : "Set password length from 1 to 12");
+      throw new Error(text.runtime.lengthError);
     const options = {
       min, max,
       digits: $("#search-digits").checked,
@@ -573,48 +697,50 @@ $("#search-start").addEventListener("click", async () => {
       combinations: $("#search-combinations").checked,
       masks: $("#search-masks").checked,
       brute: $("#search-brute").checked,
+      speedLevel: searchIntensity(),
     };
     if (![options.digits, options.popular, options.combinations, options.masks, options.brute].some(Boolean))
-      throw new Error(language() === "ru" ? "Выберите хотя бы один режим поиска" : "Select at least one search mode");
+      throw new Error(text.runtime.modeError);
 
     if (passwordWorker) passwordWorker.terminate();
     passwordWorker = new Worker("./password-worker.js", { type: "module" });
     setSearchButtons("running");
-    $("#search-mode").textContent = language() === "ru" ? "Подготовка" : "Preparing";
+    $("#search-mode").textContent = text.runtime.preparing;
     $("#search-current").textContent = "—";
     $("#search-checked").textContent = "0";
-    $("#search-speed").textContent = language() === "ru" ? "0 паролей/с" : "0 passwords/s";
+    $("#search-speed").textContent = `0 ${text.speedRate}`;
     $("#search-eta").textContent = "—";
-    $("#search-result").textContent = language() === "ru" ? "Поиск выполняется…" : "Searching…";
+    $("#search-result").textContent = text.runtime.searching;
     $("#search-result").classList.remove("found", "failed");
 
     passwordWorker.addEventListener("message", (event) => {
       const data = event.data;
-      if (data.type === "mode") $("#search-mode").textContent = data.mode;
+      const activeText = TRANSLATIONS[language()];
+      if (data.type === "mode") $("#search-mode").textContent = localizedMode(data.mode);
       if (data.type === "progress") {
-        $("#search-mode").textContent = data.mode;
+        $("#search-mode").textContent = localizedMode(data.mode);
         $("#search-current").textContent = data.candidate || "—";
         $("#search-checked").textContent = `${formatCount(data.checked)} / ${formatCount(data.total)}`;
-        $("#search-speed").textContent = `${data.speed.toFixed(2)} ${language() === "ru" ? "паролей/с" : "passwords/s"}`;
+        $("#search-speed").textContent = `${data.speed.toFixed(2)} ${activeText.speedRate}`;
         $("#search-eta").textContent = formatDuration(data.remaining);
       } else if (data.type === "paused") {
         setSearchButtons("paused");
-        $("#search-mode").textContent = language() === "ru" ? "Пауза" : "Paused";
+        $("#search-mode").textContent = activeText.runtime.paused;
       } else if (data.type === "resumed") {
         setSearchButtons("running");
       } else if (data.type === "found") {
-        finishSearch(`${language() === "ru" ? "Пароль найден" : "Password found"}: ${data.password}`);
+        finishSearch(`${activeText.runtime.found}: ${data.password}`);
       } else if (data.type === "notFound") {
-        finishSearch(language() === "ru" ? "Пароль не найден" : "Password not found", true);
+        finishSearch(activeText.runtime.notFound, true);
       } else if (data.type === "stopped") {
-        $("#search-mode").textContent = language() === "ru" ? "Остановлено" : "Stopped";
-        finishSearch(language() === "ru" ? "Поиск остановлен" : "Search stopped", true);
+        $("#search-mode").textContent = activeText.runtime.stopped;
+        finishSearch(activeText.runtime.searchStopped, true);
       } else if (data.type === "error") {
-        finishSearch(language() === "ru" ? "Неверный пароль или секрет не найден" : "Wrong password or secret not found", true);
+        finishSearch(activeText.runtime.missingSecret, true);
       }
     });
     passwordWorker.addEventListener("error", () =>
-      finishSearch(language() === "ru" ? "Ошибка поиска пароля" : "Password search error", true));
+      finishSearch(TRANSLATIONS[language()].runtime.searchError, true));
     const imageBuffer = await image.arrayBuffer();
     passwordWorker.postMessage({ type: "start", imageBuffer, options }, [imageBuffer]);
   } catch (error) {
@@ -639,19 +765,19 @@ $("#install-app").addEventListener("click", async () => {
     installPrompt = null;
   } else {
     toast(/iphone|ipad|ipod/i.test(navigator.userAgent) ?
-      "iPhone: нажмите Поделиться → На экран Домой" :
-      "Откройте меню браузера и выберите «Установить приложение»");
+      messages().iosInstall : messages().browserInstall);
   }
 });
 
 if ("serviceWorker" in navigator)
   window.addEventListener("load", () =>
     navigator.serviceWorker.register("./service-worker.js")
-      .catch(() => toast("Не удалось включить офлайн-режим", true)));
+      .catch(() => toast(messages().offlineFailed, true)));
 
 if (window.matchMedia("(display-mode: standalone)").matches)
   $("#install-app").classList.add("hidden");
 
+installPasswordToggles();
 applyTheme(localStorage.getItem(THEME_KEY) ||
   (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
 applyLanguage(language());

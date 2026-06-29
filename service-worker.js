@@ -1,4 +1,4 @@
-const CACHE_NAME = "secret-image-json-v6";
+const CACHE_NAME = "image-pwa-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
