@@ -1,9 +1,10 @@
-const CACHE_NAME = "image-pwa-v11";
+const CACHE_NAME = "image-pwa-v14";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./pwa.js",
   "./pwa-crypto.js",
+  "./pwa-download-options.js",
   "./password-worker.js",
   "./pwa.css",
   "./static/style.css",

@@ -91,6 +91,23 @@
 .search-result { margin-top: 18px; padding: 15px; border: 1px solid rgba(204,233,137,.35); border-radius: 12px; background: rgba(204,233,137,.1); color: var(--lime); font-weight: 800; line-height: 1.45; }
 .search-result.found { border-color: var(--lime); background: rgba(204,233,137,.18); }
 .search-result.failed { border-color: rgba(255,178,165,.45); background: rgba(128,34,25,.2); color: #ffc0b8; }
+.admin-layout { display: grid; grid-template-columns: minmax(260px, .72fr) minmax(420px, 1.28fr); gap: 24px; }
+.admin-create-card,
+.admin-users-card { padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: var(--paper); }
+.admin-create-card h3,
+.admin-users-card h3 { margin: 0 0 16px; color: var(--ink); }
+.admin-users-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.admin-users-heading small { color: var(--muted); }
+.admin-user-list { display: grid; gap: 10px; }
+.admin-user-row { display: grid; grid-template-columns: minmax(120px, 1fr) 170px auto; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--card); }
+.admin-user-identity { min-width: 0; }
+.admin-user-identity strong,
+.admin-user-identity small { display: block; overflow-wrap: anywhere; }
+.admin-user-identity small { margin-top: 3px; color: var(--muted); }
+.admin-role-select { width: 100%; }
+.admin-delete { min-height: 42px; padding: 9px 13px; }
+.admin-delete:disabled,
+.admin-role-select:disabled { cursor: not-allowed; opacity: .5; }
 .transfer-warning { margin-top: 12px !important; padding: 11px 12px; border: 1px solid #d8bf83; border-radius: 10px; background: #fff8e8; color: #6f5722 !important; font-size: 12px !important; }
 .transfer-warning strong { color: inherit; }
 
@@ -139,6 +156,9 @@ html[data-theme="dark"] .preview-frame { background: #111813; }
 html[data-theme="dark"] .source-note { background: #21382a; color: #d9eddf; }
 html[data-theme="dark"] .source-note span { color: #9cd682; }
 html[data-theme="dark"] .speed-control { background: #111813; }
+html[data-theme="dark"] .admin-create-card,
+html[data-theme="dark"] .admin-users-card { background: #111813; }
+html[data-theme="dark"] .admin-user-row { background: #19221b; }
 html[data-theme="dark"] .password-toggle { color: #d5dfd7; }
 html[data-theme="dark"] .password-toggle:hover:not(:disabled) { background: rgba(212,238,152,.1); }
 html[data-theme="dark"] input::placeholder,
@@ -161,6 +181,7 @@ html[data-theme="dark"] .transfer-warning { border-color: #806d3f; background: #
   .panel-heading { margin-bottom: 20px; }
   .preview-frame, .preview-frame img { min-height: 190px; height: 190px; }
   .search-layout { grid-template-columns: 1fr; }
+  .admin-layout { grid-template-columns: 1fr; }
   .settings-sheet { padding: 22px 17px; }
 }
 
@@ -175,4 +196,5 @@ html[data-theme="dark"] .transfer-warning { border-color: #806d3f; background: #
   .code-editor { min-height: 220px; }
   .length-grid { grid-template-columns: 1fr; }
   .search-actions { grid-template-columns: 1fr; }
+  .admin-user-row { grid-template-columns: 1fr; }
 }

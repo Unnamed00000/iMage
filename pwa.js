@@ -8,10 +8,17 @@ const USERS_KEY = "secret-image-json-users-v2";
 const SESSION_KEY = "secret-image-json-session-v2";
 const THEME_KEY = "secret-image-json-theme-v1";
 const LANGUAGE_KEY = "secret-image-json-language-v1";
+const DEFAULT_ADMIN_USERNAME = "admin";
+const DEFAULT_ADMIN = Object.freeze({
+  username: DEFAULT_ADMIN_USERNAME,
+  role: "admin",
+  salt: "JwPzm1sSQzNbTPESNA7fNw==",
+  passwordHash: "hSlJUNgCDpQ4PmOS4afk2X8B8uEcNr9F0XH6pic6+8M=",
+  protected: true,
+});
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 let currentUser = null;
-let registerFromWorkspace = false;
 let currentSecretBlob = null;
 let currentSecretName = "secret-image.jpg";
 let selectedSecretFile = null;
@@ -32,8 +39,8 @@ function toast(message, error = false) {
 
 const TRANSLATIONS = {
   ru: {
-    tabs: ["Создать", "Открыть и изменить", "Поиск пароля"],
-    headings: ["Спрятать текст в изображение", "Расшифровать и изменить текст", "Поиск пароля"],
+    tabs: ["Создать", "Открыть и изменить", "Поиск пароля", "Админка"],
+    headings: ["Спрятать текст в изображение", "Расшифровать и изменить текст", "Поиск пароля", "Админка"],
     choose: "Выбрать JPG или ZIP", secretJpg: "Секретное изображение или архив", imageHint: "JPG или PNG",
     min: "Минимальная длина пароля", max: "Максимальная длина пароля",
     modes: "Режимы поиска", options: ["Проверить цифры", "Проверить популярные пароли", "Проверить популярные комбинации", "Проверить маски", "Полный перебор"],
@@ -59,12 +66,13 @@ const TRANSLATIONS = {
     createCopy: ["Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.", "Выбрать изображение", "Секретный текст", "Введите обычный текст. Можно использовать несколько строк и любые символы.", "Пароль изображения", "Здесь появится результат", "Готовый JPG можно скачать или сразу открыть во второй вкладке.", "Скачать ZIP с изображением"],
     editCopy: ["Используйте результат первой вкладки или выберите сохранённый JPG/ZIP.", "Выбрать секретный JPG или ZIP", "Изображение или архив iMage", "Используется результат первой вкладки", "Пароль изображения", "Расшифрованный текст", "Текст появится здесь…", "Работает без сервера", "PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.", "Совместимо с Python V2", "Работает офлайн", "Пароль не сохраняется", "Скачать ZIP с обновлённым изображением"],
     searchDescription: "Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.",
+    admin: { description: "Создавайте пользователей, назначайте администраторов и удаляйте ненужные профили на этом устройстве.", addTitle: "Добавить пользователя", usersTitle: "Пользователи", labels: ["Логин", "Роль", "Пароль", "Повторите пароль"], add: "Добавить пользователя", roles: ["Пользователь", "Администратор"], current: "Текущий профиль", owner: "Владелец", count: (value) => `Всего профилей: ${value}`, remove: "Удалить", confirmRemove: (name) => `Удалить профиль «${name}»?` },
     speedLabel: "Скорость поиска", speedHint: "Чем выше значение, тем больше нагрузка на устройство.", speedRate: "паролей/с", transferWarning: "Скачивание создаёт ZIP, чтобы мессенджер не изменил изображение. Получатель может открыть архив прямо в iMage.",
     runtime: { updating: "Обновление…", updateFailed: "Не удалось обновить приложение", lengthError: "Укажите длину пароля от 1 до 12", modeError: "Выберите хотя бы один режим поиска", preparing: "Подготовка", searching: "Поиск выполняется…", paused: "Пауза", found: "Пароль найден", notFound: "Пароль не найден", stopped: "Остановлено", searchStopped: "Поиск остановлен", missingSecret: "Неверный пароль или секрет не найден", searchError: "Ошибка поиска пароля", veryLong: "очень долго", lessSecond: "меньше секунды", showPassword: "Показать пароль", hidePassword: "Скрыть пароль" },
   },
   en: {
-    tabs: ["Create", "Open and edit", "Password search"],
-    headings: ["Hide text in an image", "Decrypt and edit text", "Password search"],
+    tabs: ["Create", "Open and edit", "Password search", "Admin"],
+    headings: ["Hide text in an image", "Decrypt and edit text", "Password search", "Admin"],
     choose: "Choose JPG or ZIP", secretJpg: "Secret image or archive", imageHint: "JPG or PNG",
     min: "Minimum password length", max: "Maximum password length",
     modes: "Search modes", options: ["Check digits", "Check popular passwords", "Check popular combinations", "Check masks", "Full brute force"],
@@ -90,12 +98,13 @@ const TRANSLATIONS = {
     createCopy: ["Processing happens on this device. The image and password are never uploaded.", "Choose image", "Secret text", "Enter plain text. You can use multiple lines and any characters.", "Image password", "Your result will appear here", "Download the finished JPG or open it directly in the second tab.", "Download image ZIP"],
     editCopy: ["Use the result from the first tab or select a saved JPG/ZIP.", "Choose secret JPG or ZIP", "iMage image or archive", "Using the result from the first tab", "Image password", "Decrypted text", "Text will appear here…", "Works without a server", "PBKDF2-SHA256 and Fernet run with Web Crypto directly on the device.", "Compatible with Python V2", "Works offline", "Password is not saved", "Download updated image ZIP"],
     searchDescription: "The check runs locally and does not send the image or recovered password to the internet.",
+    admin: { description: "Create users, appoint administrators, and remove unneeded profiles on this device.", addTitle: "Add user", usersTitle: "Users", labels: ["Username", "Role", "Password", "Repeat password"], add: "Add user", roles: ["User", "Administrator"], current: "Current profile", owner: "Owner", count: (value) => `Profiles: ${value}`, remove: "Delete", confirmRemove: (name) => `Delete profile “${name}”?` },
     speedLabel: "Search speed", speedHint: "Higher values use more processing power on the device.", speedRate: "passwords/s", transferWarning: "Downloads are packaged as ZIP so messaging apps cannot alter the image. The recipient can open the archive directly in iMage.",
     runtime: { updating: "Updating…", updateFailed: "App update failed", lengthError: "Set password length from 1 to 12", modeError: "Select at least one search mode", preparing: "Preparing", searching: "Searching…", paused: "Paused", found: "Password found", notFound: "Password not found", stopped: "Stopped", searchStopped: "Search stopped", missingSecret: "Wrong password or secret not found", searchError: "Password search error", veryLong: "very long", lessSecond: "less than a second", showPassword: "Show password", hidePassword: "Hide password" },
   },
   da: {
-    tabs: ["Opret", "Åbn og rediger", "Søg adgangskode"],
-    headings: ["Skjul tekst i et billede", "Dekryptér og rediger tekst", "Søg efter adgangskode"],
+    tabs: ["Opret", "Åbn og rediger", "Søg adgangskode", "Admin"],
+    headings: ["Skjul tekst i et billede", "Dekryptér og rediger tekst", "Søg efter adgangskode", "Admin"],
     choose: "Vælg JPG eller ZIP", secretJpg: "Hemmeligt billede eller arkiv", imageHint: "JPG eller PNG",
     min: "Mindste adgangskodelængde", max: "Største adgangskodelængde",
     modes: "Søgemetoder", options: ["Kontrollér cifre", "Kontrollér populære adgangskoder", "Kontrollér populære kombinationer", "Kontrollér mønstre", "Fuld brute force"],
@@ -121,15 +130,16 @@ const TRANSLATIONS = {
     createCopy: ["Behandlingen foregår på enheden. Billedet og adgangskoden uploades aldrig.", "Vælg billede", "Hemmelig tekst", "Skriv almindelig tekst. Du kan bruge flere linjer og alle tegn.", "Billedets adgangskode", "Dit resultat vises her", "Hent den færdige JPG, eller åbn den direkte i den anden fane.", "Hent ZIP med billede"],
     editCopy: ["Brug resultatet fra den første fane, eller vælg en gemt JPG/ZIP.", "Vælg hemmelig JPG eller ZIP", "iMage-billede eller arkiv", "Bruger resultatet fra den første fane", "Billedets adgangskode", "Dekrypteret tekst", "Teksten vises her…", "Virker uden en server", "PBKDF2-SHA256 og Fernet kører med Web Crypto direkte på enheden.", "Kompatibel med Python V2", "Virker offline", "Adgangskoden gemmes ikke", "Hent ZIP med opdateret billede"],
     searchDescription: "Kontrollen kører lokalt og sender ikke billedet eller den fundne adgangskode til internettet.",
+    admin: { description: "Opret brugere, udnævn administratorer, og slet unødvendige profiler på denne enhed.", addTitle: "Tilføj bruger", usersTitle: "Brugere", labels: ["Brugernavn", "Rolle", "Adgangskode", "Gentag adgangskode"], add: "Tilføj bruger", roles: ["Bruger", "Administrator"], current: "Aktuel profil", owner: "Ejer", count: (value) => `Profiler: ${value}`, remove: "Slet", confirmRemove: (name) => `Slet profilen “${name}”?` },
     speedLabel: "Søgehastighed", speedHint: "En højere værdi bruger mere processorkraft på enheden.", speedRate: "adgangskoder/s", transferWarning: "Downloads pakkes som ZIP, så beskedapps ikke kan ændre billedet. Modtageren kan åbne arkivet direkte i iMage.",
     runtime: { updating: "Opdaterer…", updateFailed: "Appen kunne ikke opdateres", lengthError: "Angiv en adgangskodelængde fra 1 til 12", modeError: "Vælg mindst én søgemetode", preparing: "Forbereder", searching: "Søger…", paused: "Pause", found: "Adgangskode fundet", notFound: "Adgangskoden blev ikke fundet", stopped: "Stoppet", searchStopped: "Søgningen er stoppet", missingSecret: "Forkert adgangskode eller ingen hemmelighed fundet", searchError: "Fejl under adgangskodesøgning", veryLong: "meget lang tid", lessSecond: "under ét sekund", showPassword: "Vis adgangskode", hidePassword: "Skjul adgangskode" },
   },
 };
 
 const MESSAGES = {
-  ru: { enterLogin: "Введите логин", passwordMin: "Пароль должен содержать минимум 6 символов", mismatch: "Пароли не совпадают", invalidLogin: "Неверный логин или пароль", invalidAdmin: "Неверные данные администратора", adminRequired: "Требуются права администратора", profileExists: "Профиль с таким логином уже существует", profileCreated: (name) => `Профиль ${name} создан`, chooseImage: "Выберите изображение", convertFailed: "Не удалось преобразовать изображение", createdTitle: "Секретное изображение создано", readyDownload: (name) => `${name} готов к скачиванию.`, encrypting: "Шифрование…", created: "Секретное изображение создано", decrypting: "Расшифровка…", decrypted: "Текст расшифрован", saving: "Сохранение…", updated: "Обновлённое изображение создано", iosInstall: "iPhone: нажмите Поделиться → На экран Домой", browserInstall: "Откройте меню браузера и выберите «Установить приложение»", offlineFailed: "Не удалось включить офлайн-режим", verificationFailed: "Созданный файл не прошёл проверку" },
-  en: { enterLogin: "Enter a username", passwordMin: "The password must contain at least 6 characters", mismatch: "Passwords do not match", invalidLogin: "Wrong username or password", invalidAdmin: "Wrong administrator credentials", adminRequired: "Administrator rights are required", profileExists: "A profile with this username already exists", profileCreated: (name) => `Profile ${name} created`, chooseImage: "Choose an image", convertFailed: "The image could not be converted", createdTitle: "Secret image created", readyDownload: (name) => `${name} is ready to download.`, encrypting: "Encrypting…", created: "Secret image created", decrypting: "Decrypting…", decrypted: "Text decrypted", saving: "Saving…", updated: "Updated image created", iosInstall: "iPhone: tap Share → Add to Home Screen", browserInstall: "Open the browser menu and select “Install app”", offlineFailed: "Offline mode could not be enabled", verificationFailed: "The created file failed verification" },
-  da: { enterLogin: "Indtast et brugernavn", passwordMin: "Adgangskoden skal indeholde mindst 6 tegn", mismatch: "Adgangskoderne er ikke ens", invalidLogin: "Forkert brugernavn eller adgangskode", invalidAdmin: "Forkerte administratoroplysninger", adminRequired: "Administratorrettigheder er påkrævet", profileExists: "Der findes allerede en profil med dette brugernavn", profileCreated: (name) => `Profilen ${name} er oprettet`, chooseImage: "Vælg et billede", convertFailed: "Billedet kunne ikke konverteres", createdTitle: "Det hemmelige billede er oprettet", readyDownload: (name) => `${name} er klar til at blive hentet.`, encrypting: "Krypterer…", created: "Det hemmelige billede er oprettet", decrypting: "Dekrypterer…", decrypted: "Teksten er dekrypteret", saving: "Gemmer…", updated: "Det opdaterede billede er oprettet", iosInstall: "iPhone: tryk på Del → Føj til hjemmeskærm", browserInstall: "Åbn browsermenuen, og vælg “Installér app”", offlineFailed: "Offlinetilstand kunne ikke aktiveres", verificationFailed: "Den oprettede fil bestod ikke kontrollen" },
+  ru: { enterLogin: "Введите логин", passwordMin: "Пароль должен содержать минимум 6 символов", mismatch: "Пароли не совпадают", invalidLogin: "Неверный логин или пароль", invalidAdmin: "Неверные данные администратора", adminRequired: "Требуются права администратора", profileExists: "Профиль с таким логином уже существует", profileCreated: (name) => `Профиль ${name} создан`, profileDeleted: (name) => `Профиль ${name} удалён`, roleChanged: (name) => `Роль профиля ${name} изменена`, cannotChangeSelf: "Нельзя изменить роль текущего профиля", cannotDeleteSelf: "Нельзя удалить текущий профиль", lastAdmin: "В приложении должен остаться хотя бы один администратор", chooseImage: "Выберите изображение", convertFailed: "Не удалось преобразовать изображение", createdTitle: "Секретное изображение создано", readyDownload: (name) => `${name} готов к скачиванию.`, encrypting: "Шифрование…", created: "Секретное изображение создано", decrypting: "Расшифровка…", decrypted: "Текст расшифрован", saving: "Сохранение…", updated: "Обновлённое изображение создано", iosInstall: "iPhone: нажмите Поделиться → На экран Домой", browserInstall: "Откройте меню браузера и выберите «Установить приложение»", offlineFailed: "Не удалось включить офлайн-режим", verificationFailed: "Созданный файл не прошёл проверку" },
+  en: { enterLogin: "Enter a username", passwordMin: "The password must contain at least 6 characters", mismatch: "Passwords do not match", invalidLogin: "Wrong username or password", invalidAdmin: "Wrong administrator credentials", adminRequired: "Administrator rights are required", profileExists: "A profile with this username already exists", profileCreated: (name) => `Profile ${name} created`, profileDeleted: (name) => `Profile ${name} deleted`, roleChanged: (name) => `Role for ${name} changed`, cannotChangeSelf: "You cannot change the current profile's role", cannotDeleteSelf: "You cannot delete the current profile", lastAdmin: "At least one administrator must remain", chooseImage: "Choose an image", convertFailed: "The image could not be converted", createdTitle: "Secret image created", readyDownload: (name) => `${name} is ready to download.`, encrypting: "Encrypting…", created: "Secret image created", decrypting: "Decrypting…", decrypted: "Text decrypted", saving: "Saving…", updated: "Updated image created", iosInstall: "iPhone: tap Share → Add to Home Screen", browserInstall: "Open the browser menu and select “Install app”", offlineFailed: "Offline mode could not be enabled", verificationFailed: "The created file failed verification" },
+  da: { enterLogin: "Indtast et brugernavn", passwordMin: "Adgangskoden skal indeholde mindst 6 tegn", mismatch: "Adgangskoderne er ikke ens", invalidLogin: "Forkert brugernavn eller adgangskode", invalidAdmin: "Forkerte administratoroplysninger", adminRequired: "Administratorrettigheder er påkrævet", profileExists: "Der findes allerede en profil med dette brugernavn", profileCreated: (name) => `Profilen ${name} er oprettet`, profileDeleted: (name) => `Profilen ${name} er slettet`, roleChanged: (name) => `Rollen for ${name} er ændret`, cannotChangeSelf: "Du kan ikke ændre rollen for den aktuelle profil", cannotDeleteSelf: "Du kan ikke slette den aktuelle profil", lastAdmin: "Der skal være mindst én administrator", chooseImage: "Vælg et billede", convertFailed: "Billedet kunne ikke konverteres", createdTitle: "Det hemmelige billede er oprettet", readyDownload: (name) => `${name} er klar til at blive hentet.`, encrypting: "Krypterer…", created: "Det hemmelige billede er oprettet", decrypting: "Dekrypterer…", decrypted: "Teksten er dekrypteret", saving: "Gemmer…", updated: "Det opdaterede billede er oprettet", iosInstall: "iPhone: tryk på Del → Føj til hjemmeskærm", browserInstall: "Åbn browsermenuen, og vælg “Installér app”", offlineFailed: "Offlinetilstand kunne ikke aktiveres", verificationFailed: "Den oprettede fil bestod ikke kontrollen" },
 };
 
 const ZIP_MESSAGES = {
@@ -203,29 +213,17 @@ function applyLanguage(code) {
   localStorage.setItem(LANGUAGE_KEY, selected);
   document.documentElement.lang = selected;
   $("#language-select").value = selected;
-  $("#setup-card h1").textContent = copy.auth.setupTitle;
-  $("#setup-card .lead").textContent = copy.auth.setupLead;
-  [...$$("#setup-card label")].forEach((label, index) => replaceLabelText(label, copy.auth.setupLabels[index]));
-  $("#setup-form button[type='submit']").textContent = copy.auth.setupButton;
   $("#login-card h1").textContent = copy.auth.loginTitle;
   $("#login-card .lead").textContent = copy.auth.loginLead;
   [...$$("#login-card label")].forEach((label, index) => replaceLabelText(label, copy.auth.loginLabels[index]));
   $("#login-form button[type='submit']").textContent = copy.auth.loginButton;
-  $(".auth-divider span").textContent = copy.auth.or;
-  $("#open-register").textContent = copy.newProfile;
-  $("#register-card h1").textContent = copy.auth.registerTitle;
-  $("#register-card .lead").textContent = copy.auth.registerLead;
-  $("#admin-proof legend").textContent = copy.auth.proof;
-  [...$$("#register-card label")].forEach((label, index) => replaceLabelText(label, copy.auth.registerLabels[index]));
-  [...$$("#new-role option")].forEach((option, index) => { option.textContent = copy.auth.roles[index]; });
-  $("#register-form button[type='submit']").textContent = copy.auth.createProfile;
-  $("#register-back").textContent = copy.auth.back;
   [...$$('.tab')].forEach((tab, index) => { tab.innerHTML = `<span>0${index + 1}</span> ${copy.tabs[index]}`; });
   [...$$('.panel-heading h2')].forEach((heading, index) => { heading.textContent = copy.headings[index]; });
   const panelDescriptions = $$(".panel-heading > p");
   panelDescriptions[0].textContent = copy.createCopy[0];
   panelDescriptions[1].textContent = copy.editCopy[0];
   panelDescriptions[2].textContent = copy.searchDescription;
+  panelDescriptions[3].textContent = copy.admin.description;
   $("#create-image").closest("label").querySelector("strong").textContent = copy.createCopy[1];
   if (!$("#create-image").files[0]) $("#create-file-name").textContent = copy.imageHint;
   $("label[for='create-text']").textContent = copy.createCopy[2];
@@ -247,6 +245,11 @@ function applyLanguage(code) {
   $(".security-card > p:not(.eyebrow)").textContent = copy.editCopy[8];
   [...$$(".security-card li")].forEach((item, index) => { item.textContent = copy.editCopy[index + 9]; });
   $("#download-updated").textContent = copy.editCopy[12];
+  $("#admin-panel .admin-create-card h3").textContent = copy.admin.addTitle;
+  [...$$("#admin-user-form label")].forEach((label, index) => replaceLabelText(label, copy.admin.labels[index]));
+  [...$$("#admin-new-role option")].forEach((option, index) => { option.textContent = copy.admin.roles[index]; });
+  $("#admin-create-user").textContent = copy.admin.add;
+  $("#admin-users-title").textContent = copy.admin.usersTitle;
   $("#search-image").closest("label").querySelector("strong").textContent = copy.choose;
   $("#search-file-name").textContent = selectedSearchFile ? selectedSearchFile.name : copy.secretJpg;
   const lengthLabels = $$(".length-grid label");
@@ -280,12 +283,12 @@ function applyLanguage(code) {
   sections[2].querySelector("small").textContent = copy.appHint;
   $("#install-app").textContent = copy.install;
   $("#force-update").textContent = copy.update;
-  $("#new-profile").textContent = copy.newProfile;
   $("#logout").textContent = copy.logout;
   $("#create-submit").textContent = copy.create;
   $("#extract-submit").textContent = copy.extract;
   $("#save-text").textContent = copy.saveText;
   $("#save-updated").textContent = copy.saveImage;
+  if (currentUser?.role === "admin") renderAdminUsers();
 }
 
 function applyTheme(theme) {
@@ -313,6 +316,29 @@ function users() {
     const value = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
     return Array.isArray(value) ? value : [];
   } catch { return []; }
+}
+
+function saveUsers(value) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(value));
+}
+
+function ensureDefaultAdmin() {
+  const allUsers = users();
+  const index = allUsers.findIndex((user) =>
+    user.username.toLocaleLowerCase() === DEFAULT_ADMIN_USERNAME);
+  const builtIn = { ...DEFAULT_ADMIN };
+  if (index === -1) allUsers.unshift(builtIn);
+  else allUsers[index] = builtIn;
+  saveUsers(allUsers);
+  return allUsers;
+}
+
+function isProtectedAdmin(user) {
+  return user?.username?.toLocaleLowerCase() === DEFAULT_ADMIN_USERNAME;
+}
+
+function requireAdmin() {
+  if (!currentUser || currentUser.role !== "admin") throw new Error(messages().adminRequired);
 }
 
 function sameBytes(a, b) {
@@ -343,7 +369,7 @@ function authCard(id) {
   concealPasswords();
   $("#auth-view").classList.remove("hidden");
   $("#workspace-view").classList.add("hidden");
-  ["setup-card", "login-card", "register-card"].forEach((name) =>
+  ["login-card"].forEach((name) =>
     $("#" + name).classList.toggle("hidden", name !== id));
 }
 
@@ -357,34 +383,18 @@ function showWorkspace(user) {
   sessionStorage.setItem(SESSION_KEY, user.username);
   $("#auth-view").classList.add("hidden");
   $("#workspace-view").classList.remove("hidden");
-  $("#new-profile").classList.toggle("hidden", user.role !== "admin");
-}
-
-function showRegister(fromWorkspace) {
-  closeSettings(true);
-  registerFromWorkspace = fromWorkspace;
-  authCard("register-card");
-  $("#admin-proof").classList.toggle("hidden", fromWorkspace);
+  const isAdmin = user.role === "admin";
+  $$(".admin-only").forEach((element) => element.classList.toggle("hidden", !isAdmin));
+  if (!isAdmin && ["search-panel", "admin-panel"].includes($(".panel.active")?.id)) switchTab("create-panel");
+  if (isAdmin) renderAdminUsers();
 }
 
 function restoreView() {
-  const allUsers = users();
-  if (!allUsers.length) return authCard("setup-card");
+  const allUsers = ensureDefaultAdmin();
   const username = sessionStorage.getItem(SESSION_KEY);
   const user = allUsers.find((item) => item.username === username);
   return user ? showWorkspace(user) : showLogin();
 }
-
-$("#setup-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  try {
-    if ($("#setup-password").value !== $("#setup-confirm").value)
-      throw new Error(messages().mismatch);
-    const user = await makeUser($("#setup-username").value, $("#setup-password").value, "admin");
-    localStorage.setItem(USERS_KEY, JSON.stringify([user]));
-    showWorkspace(user);
-  } catch (error) { toast(error.message, true); }
-});
 
 $("#login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -395,36 +405,120 @@ $("#login-form").addEventListener("submit", async (event) => {
   } catch (error) { toast(error.message, true); }
 });
 
-$("#open-register").addEventListener("click", () => showRegister(false));
-$("#new-profile").addEventListener("click", () => showRegister(true));
-$("#register-back").addEventListener("click", () =>
-  registerFromWorkspace && currentUser ? showWorkspace(currentUser) : showLogin());
+function renderAdminUsers() {
+  if (!currentUser || currentUser.role !== "admin") return;
+  const copy = TRANSLATIONS[language()].admin;
+  const allUsers = users();
+  const list = $("#admin-user-list");
+  list.replaceChildren();
+  $("#admin-users-count").textContent = copy.count(allUsers.length);
+  allUsers.forEach((user) => {
+    const row = document.createElement("div");
+    row.className = "admin-user-row";
 
-$("#register-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  try {
-    if (!registerFromWorkspace) {
-      const admin = await authenticate($("#proof-username").value, $("#proof-password").value);
-      if (!admin || admin.role !== "admin") throw new Error(messages().invalidAdmin);
-    } else if (!currentUser || currentUser.role !== "admin") {
-      throw new Error(messages().adminRequired);
+    const identity = document.createElement("div");
+    identity.className = "admin-user-identity";
+    const name = document.createElement("strong");
+    name.textContent = user.username;
+    identity.appendChild(name);
+    const labels = [];
+    if (isProtectedAdmin(user)) labels.push(copy.owner);
+    if (user.username === currentUser.username) labels.push(copy.current);
+    if (labels.length) {
+      const current = document.createElement("small");
+      current.textContent = labels.join(" · ");
+      identity.appendChild(current);
     }
-    if ($("#new-password").value !== $("#new-confirm").value)
-      throw new Error(messages().mismatch);
+
+    const role = document.createElement("select");
+    role.className = "admin-role-select";
+    role.dataset.username = user.username;
+    [["user", copy.roles[0]], ["admin", copy.roles[1]]].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      role.appendChild(option);
+    });
+    role.value = user.role;
+    role.disabled = user.username === currentUser.username || isProtectedAdmin(user);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "danger-button admin-delete";
+    remove.dataset.username = user.username;
+    remove.textContent = copy.remove;
+    remove.disabled = user.username === currentUser.username || isProtectedAdmin(user);
+    row.append(identity, role, remove);
+    list.appendChild(row);
+  });
+}
+
+$("#admin-user-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  try {
+    requireAdmin();
+    if ($("#admin-new-password").value !== $("#admin-new-confirm").value) throw new Error(messages().mismatch);
     const allUsers = users();
-    const username = $("#new-username").value.trim();
+    const username = $("#admin-new-username").value.trim();
     if (allUsers.some((item) => item.username.toLocaleLowerCase() === username.toLocaleLowerCase()))
       throw new Error(messages().profileExists);
-    const user = await makeUser(username, $("#new-password").value, $("#new-role").value);
+    const user = await makeUser(username, $("#admin-new-password").value, $("#admin-new-role").value);
     allUsers.push(user);
-    localStorage.setItem(USERS_KEY, JSON.stringify(allUsers));
+    saveUsers(allUsers);
+    form.reset();
+    concealPasswords();
+    renderAdminUsers();
     toast(messages().profileCreated(user.username));
-    registerFromWorkspace && currentUser ? showWorkspace(currentUser) : showLogin();
+  } catch (error) { toast(error.message, true); }
+});
+
+$("#admin-user-list").addEventListener("change", (event) => {
+  const select = event.target.closest(".admin-role-select");
+  if (!select) return;
+  try {
+    requireAdmin();
+    const allUsers = users();
+    const user = allUsers.find((item) => item.username === select.dataset.username);
+    if (!user) return renderAdminUsers();
+    if (isProtectedAdmin(user)) throw new Error(messages().adminRequired);
+    if (user.username === currentUser.username) throw new Error(messages().cannotChangeSelf);
+    if (user.role === "admin" && select.value !== "admin" && allUsers.filter((item) => item.role === "admin").length === 1)
+      throw new Error(messages().lastAdmin);
+    user.role = select.value === "admin" ? "admin" : "user";
+    saveUsers(allUsers);
+    renderAdminUsers();
+    toast(messages().roleChanged(user.username));
+  } catch (error) {
+    renderAdminUsers();
+    toast(error.message, true);
+  }
+});
+
+$("#admin-user-list").addEventListener("click", (event) => {
+  const button = event.target.closest(".admin-delete");
+  if (!button) return;
+  try {
+    requireAdmin();
+    const username = button.dataset.username;
+    if (username === currentUser.username) throw new Error(messages().cannotDeleteSelf);
+    const allUsers = users();
+    const target = allUsers.find((item) => item.username === username);
+    if (!target) return renderAdminUsers();
+    if (isProtectedAdmin(target)) throw new Error(messages().adminRequired);
+    if (target.role === "admin" && allUsers.filter((item) => item.role === "admin").length === 1)
+      throw new Error(messages().lastAdmin);
+    if (!window.confirm(TRANSLATIONS[language()].admin.confirmRemove(username))) return;
+    saveUsers(allUsers.filter((item) => item.username !== username));
+    renderAdminUsers();
+    toast(messages().profileDeleted(username));
   } catch (error) { toast(error.message, true); }
 });
 
 $("#logout").addEventListener("click", () => {
   closeSettings(true);
+  if (passwordWorker) passwordWorker.terminate();
+  passwordWorker = null;
   currentUser = null;
   sessionStorage.removeItem(SESSION_KEY);
   showLogin();
@@ -463,6 +557,10 @@ $("#force-update").addEventListener("click", async () => {
 });
 
 function switchTab(id) {
+  if (["search-panel", "admin-panel"].includes(id) && currentUser?.role !== "admin") {
+    toast(messages().adminRequired, true);
+    return;
+  }
   $$(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === id));
   $$(".panel").forEach((panel) => panel.classList.toggle("active", panel.id === id));
 }
@@ -882,6 +980,7 @@ $("#search-image").addEventListener("change", async (event) => {
 
 $("#search-start").addEventListener("click", async () => {
   try {
+    requireAdmin();
     const text = TRANSLATIONS[language()];
     const image = checkedFile(selectedSearchFile);
     const min = Number.parseInt($("#search-min").value, 10);

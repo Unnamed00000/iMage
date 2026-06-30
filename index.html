@@ -16,19 +16,6 @@
 </head>
 <body>
   <main id="auth-view" class="auth-shell view">
-    <section id="setup-card" class="auth-card hidden">
-      <div class="brand-mark">{ }</div>
-      <p class="eyebrow">iMage · PWA</p>
-      <h1>Создайте администратора</h1>
-      <p class="lead">Профиль хранится только на этом устройстве. Пароль сохраняется как соль и защищённый хэш.</p>
-      <form id="setup-form" class="stack-form">
-        <label>Логин<input id="setup-username" value="admin" required autocomplete="username"></label>
-        <label>Пароль<input id="setup-password" type="password" minlength="6" required autocomplete="new-password"></label>
-        <label>Повторите пароль<input id="setup-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
-        <button class="primary wide" type="submit">Создать аккаунт</button>
-      </form>
-    </section>
-
     <section id="login-card" class="auth-card hidden">
       <div class="brand-mark">{ }</div>
       <p class="eyebrow">iMage · PWA</p>
@@ -38,30 +25,6 @@
         <label>Логин<input id="login-username" required autocomplete="username"></label>
         <label>Пароль<input id="login-password" type="password" required autocomplete="current-password"></label>
         <button class="primary wide" type="submit">Войти</button>
-      </form>
-      <div class="auth-divider"><span>или</span></div>
-      <button id="open-register" class="secondary wide" type="button">Создать новый профиль</button>
-    </section>
-
-    <section id="register-card" class="auth-card register-card hidden">
-      <div class="brand-mark">＋</div>
-      <p class="eyebrow">NEW LOCAL PROFILE</p>
-      <h1>Новый профиль</h1>
-      <p class="lead">Новый профиль должен подтвердить существующий администратор.</p>
-      <form id="register-form" class="stack-form">
-        <fieldset id="admin-proof" class="auth-proof">
-          <legend>Подтверждение администратора</legend>
-          <label>Логин администратора<input id="proof-username" autocomplete="username"></label>
-          <label>Пароль администратора<input id="proof-password" type="password" autocomplete="current-password"></label>
-        </fieldset>
-        <label>Логин нового профиля<input id="new-username" required autocomplete="off"></label>
-        <label>Тип профиля
-          <select id="new-role"><option value="user">Пользователь</option><option value="admin">Администратор</option></select>
-        </label>
-        <label>Новый пароль<input id="new-password" type="password" minlength="6" required autocomplete="new-password"></label>
-        <label>Повторите пароль<input id="new-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
-        <button class="primary wide" type="submit">Создать профиль</button>
-        <button id="register-back" class="ghost wide" type="button">Назад</button>
       </form>
     </section>
   </main>
@@ -79,7 +42,8 @@
       <nav class="tabs" aria-label="Рабочие вкладки">
         <button class="tab active" type="button" data-tab="create-panel"><span>01</span> Создать</button>
         <button class="tab" type="button" data-tab="edit-panel"><span>02</span> Открыть и изменить</button>
-        <button class="tab" type="button" data-tab="search-panel"><span>03</span> Поиск пароля</button>
+        <button class="tab admin-only hidden" type="button" data-tab="search-panel"><span>03</span> Поиск пароля</button>
+        <button class="tab admin-only hidden" type="button" data-tab="admin-panel"><span>04</span> Админка</button>
       </nav>
 
       <section id="create-panel" class="panel active">
@@ -147,7 +111,7 @@
         </div>
       </section>
 
-      <section id="search-panel" class="panel">
+      <section id="search-panel" class="panel admin-only hidden">
         <div class="panel-heading">
           <div><p class="eyebrow">PASSWORD RECOVERY</p><h2>Поиск пароля</h2></div>
           <p>Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.</p>
@@ -196,6 +160,29 @@
           </aside>
         </div>
       </section>
+
+      <section id="admin-panel" class="panel admin-only hidden">
+        <div class="panel-heading">
+          <div><p class="eyebrow">USER MANAGEMENT</p><h2>Админка</h2></div>
+          <p>Создавайте пользователей, назначайте администраторов и удаляйте ненужные профили на этом устройстве.</p>
+        </div>
+        <div class="admin-layout">
+          <form id="admin-user-form" class="admin-create-card stack-form">
+            <h3>Добавить пользователя</h3>
+            <label>Логин<input id="admin-new-username" required autocomplete="off"></label>
+            <label>Роль
+              <select id="admin-new-role"><option value="user">Пользователь</option><option value="admin">Администратор</option></select>
+            </label>
+            <label>Пароль<input id="admin-new-password" type="password" minlength="6" required autocomplete="new-password"></label>
+            <label>Повторите пароль<input id="admin-new-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+            <button id="admin-create-user" class="primary wide" type="submit">Добавить пользователя</button>
+          </form>
+          <section class="admin-users-card" aria-labelledby="admin-users-title">
+            <div class="admin-users-heading"><div><h3 id="admin-users-title">Пользователи</h3><small id="admin-users-count"></small></div></div>
+            <div id="admin-user-list" class="admin-user-list"></div>
+          </section>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -212,7 +199,6 @@
       <div class="settings-footer">
         <button id="install-app" class="primary install-button" type="button">Установить приложение</button>
         <button id="force-update" class="secondary" type="button">Принудительно обновить</button>
-        <button id="new-profile" class="secondary" type="button">Создать новый профиль</button>
         <button id="logout" class="ghost" type="button">Выйти</button>
       </div>
     </section>
