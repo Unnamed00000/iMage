@@ -1,3 +1,7 @@
+import { PBKDF2_ITERATIONS, bytesToBase64, deriveKeyBytes, randomBytes } from "./pwa-crypto.js";
+
+const USERS_KEY = "secret-image-json-users-v2";
+const SESSION_KEY = "secret-image-json-session-v2";
 const DOWNLOAD_LABELS = {
   ru: {
     image: "Скачать изображение",
@@ -31,6 +35,19 @@ function text() {
   return DOWNLOAD_LABELS[currentLanguage()];
 }
 
+function users() {
+  try {
+    const value = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(value) {
+  localStorage.setItem(USERS_KEY, JSON.stringify(value));
+}
+
 function showToast(message, error = false) {
   const toast = document.querySelector("#toast");
   if (!toast) return;
@@ -57,11 +74,103 @@ function injectStyles() {
       font-size: 11px;
       letter-spacing: .04em;
     }
+    .auth-link-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      margin-top: 12px;
+    }
+    .auth-link-row .ghost,
+    .auth-link-row .secondary { width: 100%; }
+    .auth-help-text { margin-top: 12px; color: var(--muted); font-size: 13px; line-height: 1.5; }
     @media (max-width: 420px) {
       .download-choice { grid-template-columns: 1fr; }
     }
   `;
   document.head.appendChild(style);
+}
+
+function authCard(id) {
+  ["login-card", "public-register-card", "forgot-password-card"].forEach((name) => {
+    const card = document.querySelector("#" + name);
+    if (card) card.classList.toggle("hidden", name !== id);
+  });
+}
+
+async function createPublicUser(event) {
+  event.preventDefault();
+  const username = document.querySelector("#public-username").value.trim();
+  const password = document.querySelector("#public-password").value;
+  const confirm = document.querySelector("#public-confirm").value;
+  try {
+    if (!username) throw new Error("Введите логин");
+    if (password.length < 6) throw new Error("Пароль должен быть минимум 6 символов");
+    if (password !== confirm) throw new Error("Пароли не совпадают");
+    const allUsers = users();
+    if (allUsers.some((user) => user.username.toLocaleLowerCase() === username.toLocaleLowerCase())) {
+      throw new Error("Такой профиль уже существует");
+    }
+    const salt = randomBytes(16);
+    const hash = await deriveKeyBytes(password, salt, PBKDF2_ITERATIONS);
+    const user = { username, role: "user", salt: bytesToBase64(salt), passwordHash: bytesToBase64(hash) };
+    allUsers.push(user);
+    saveUsers(allUsers);
+    sessionStorage.setItem(SESSION_KEY, username);
+    showToast("Профиль создан");
+    setTimeout(() => window.location.reload(), 350);
+  } catch (error) {
+    showToast(error.message, true);
+  }
+}
+
+function installAuthExtras() {
+  const loginCard = document.querySelector("#login-card");
+  const loginForm = document.querySelector("#login-form");
+  const authView = document.querySelector("#auth-view");
+  if (!loginCard || !loginForm || !authView || document.querySelector("#public-register-card")) return;
+
+  const links = document.createElement("div");
+  links.className = "auth-link-row";
+  links.innerHTML = `
+    <button id="open-public-register" class="secondary wide" type="button">Создать профиль</button>
+    <button id="open-forgot-password" class="ghost wide" type="button">Забыли пароль?</button>`;
+  loginForm.insertAdjacentElement("afterend", links);
+
+  const registerCard = document.createElement("section");
+  registerCard.id = "public-register-card";
+  registerCard.className = "auth-card hidden";
+  registerCard.innerHTML = `
+    <div class="brand-mark">＋</div>
+    <p class="eyebrow">NEW USER PROFILE</p>
+    <h1>Создать профиль</h1>
+    <p class="lead">Этот профиль будет создан как обычный пользователь. Администратором его можно сделать только в админке.</p>
+    <form id="public-register-form" class="stack-form">
+      <label>Логин<input id="public-username" required autocomplete="username"></label>
+      <label>Пароль<input id="public-password" type="password" minlength="6" required autocomplete="new-password"></label>
+      <label>Повторите пароль<input id="public-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+      <button class="primary wide" type="submit">Создать профиль</button>
+      <button id="public-register-back" class="ghost wide" type="button">Назад</button>
+    </form>`;
+
+  const forgotCard = document.createElement("section");
+  forgotCard.id = "forgot-password-card";
+  forgotCard.className = "auth-card hidden";
+  forgotCard.innerHTML = `
+    <div class="brand-mark">?</div>
+    <p class="eyebrow">PASSWORD RECOVERY</p>
+    <h1>Восстановление пароля</h1>
+    <p class="lead">Пароль не хранится в открытом виде, поэтому приложение не может показать старый пароль.</p>
+    <p class="auth-help-text">Создайте новый обычный профиль или попросите администратора добавить новый профиль в разделе 04 Админка.</p>
+    <button id="forgot-create-profile" class="primary wide" type="button">Создать профиль</button>
+    <button id="forgot-back" class="ghost wide" type="button">Назад</button>`;
+
+  authView.append(registerCard, forgotCard);
+  document.querySelector("#open-public-register").addEventListener("click", () => authCard("public-register-card"));
+  document.querySelector("#open-forgot-password").addEventListener("click", () => authCard("forgot-password-card"));
+  document.querySelector("#public-register-back").addEventListener("click", () => authCard("login-card"));
+  document.querySelector("#forgot-back").addEventListener("click", () => authCard("login-card"));
+  document.querySelector("#forgot-create-profile").addEventListener("click", () => authCard("public-register-card"));
+  document.querySelector("#public-register-form").addEventListener("submit", createPublicUser);
 }
 
 function downloadBlob(blob, filename) {
@@ -132,6 +241,7 @@ function applyDownloadLabels() {
 }
 
 injectStyles();
+installAuthExtras();
 applyDownloadLabels();
 syncVisibility("#download-created", "#download-created-image");
 syncVisibility("#download-updated", "#download-updated-image");
