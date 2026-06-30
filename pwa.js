@@ -1,21 +1,19 @@
 import {
-  PBKDF2_ITERATIONS, base64ToBytes, bytesToBase64, createSecretPayload,
-  deriveKeyBytes, embedSecretPayload, extractSecretJson, jsonToPlainText,
-  plainTextToJson, randomBytes,
+  createSecretPayload, embedSecretPayload, extractSecretJson, jsonToPlainText,
+  plainTextToJson,
 } from "./pwa-crypto.js";
+import {
+  changeUserRole, createFirebaseUser, getUserProfile, listUserProfiles,
+  observeAuthState, removeUserProfile, saveProfileSettings,
+  sendResetForEmail, sendResetForIdentifier, signInAccount, signOutAccount,
+} from "./firebase-users.js";
 
-const USERS_KEY = "secret-image-json-users-v2";
-const SESSION_KEY = "secret-image-json-session-v2";
+if (document.readyState === "loading") {
+  await new Promise((resolve) => document.addEventListener("DOMContentLoaded", resolve, { once: true }));
+}
+
 const THEME_KEY = "secret-image-json-theme-v1";
 const LANGUAGE_KEY = "secret-image-json-language-v1";
-const DEFAULT_ADMIN_USERNAME = "admin";
-const DEFAULT_ADMIN = Object.freeze({
-  username: DEFAULT_ADMIN_USERNAME,
-  role: "admin",
-  salt: "JwPzm1sSQzNbTPESNA7fNw==",
-  passwordHash: "hSlJUNgCDpQ4PmOS4afk2X8B8uEcNr9F0XH6pic6+8M=",
-  protected: true,
-});
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 let currentUser = null;
@@ -27,6 +25,8 @@ let passwordWorker = null;
 let installPrompt = null;
 let toastTimer = null;
 let settingsOpenedAt = 0;
+let adminUsers = [];
+let authTransition = 0;
 
 function toast(message, error = false) {
   const element = $("#toast");
@@ -63,10 +63,11 @@ const TRANSLATIONS = {
       setupButton: "Создать аккаунт", loginButton: "Войти", or: "или", proof: "Подтверждение администратора", createProfile: "Создать профиль", back: "Назад",
       roles: ["Пользователь", "Администратор"],
     },
+    firebaseAuth: { loginLead: "Аккаунты и роли защищены Firebase Authentication и Firestore.", loginLabels: ["Email или логин", "Пароль"], openRegister: "Создать профиль", openReset: "Забыли пароль?", registerTitle: "Создать профиль", registerLead: "Новый профиль создаётся как обычный пользователь. Роль администратора назначается в админке.", registerLabels: ["Логин", "Email", "Пароль", "Повторите пароль"], create: "Создать профиль", resetTitle: "Восстановление пароля", resetLead: "Введите email или логин — Firebase отправит письмо для создания нового пароля.", resetLabel: "Email или логин", sendReset: "Отправить письмо", back: "Назад", resetSent: "Письмо для сброса пароля отправлено" },
     createCopy: ["Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.", "Выбрать изображение", "Секретный текст", "Введите обычный текст. Можно использовать несколько строк и любые символы.", "Пароль изображения", "Здесь появится результат", "Готовый JPG можно скачать или сразу открыть во второй вкладке.", "Скачать ZIP с изображением"],
     editCopy: ["Используйте результат первой вкладки или выберите сохранённый JPG/ZIP.", "Выбрать секретный JPG или ZIP", "Изображение или архив iMage", "Используется результат первой вкладки", "Пароль изображения", "Расшифрованный текст", "Текст появится здесь…", "Работает без сервера", "PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.", "Совместимо с Python V2", "Работает офлайн", "Пароль не сохраняется", "Скачать ZIP с обновлённым изображением"],
     searchDescription: "Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.",
-    admin: { description: "Создавайте пользователей, назначайте администраторов и удаляйте ненужные профили на этом устройстве.", addTitle: "Добавить пользователя", usersTitle: "Пользователи", labels: ["Логин", "Роль", "Пароль", "Повторите пароль"], add: "Добавить пользователя", roles: ["Пользователь", "Администратор"], current: "Текущий профиль", owner: "Владелец", count: (value) => `Всего профилей: ${value}`, remove: "Удалить", confirmRemove: (name) => `Удалить профиль «${name}»?` },
+    admin: { description: "Управляйте аккаунтами и ролями из Firebase.", addTitle: "Добавить пользователя", usersTitle: "Пользователи Firebase", labels: ["Логин", "Email", "Роль", "Пароль", "Повторите пароль"], add: "Добавить пользователя", roles: ["Пользователь", "Администратор"], current: "Текущий профиль", count: (value) => `Всего профилей: ${value}`, remove: "Удалить профиль", reset: "Сбросить пароль", confirmRemove: (name) => `Удалить профиль «${name}» из Firestore?`, uid: "UID", phone: "Телефон", created: "Создан" },
     speedLabel: "Скорость поиска", speedHint: "Чем выше значение, тем больше нагрузка на устройство.", speedRate: "паролей/с", transferWarning: "Скачивание создаёт ZIP, чтобы мессенджер не изменил изображение. Получатель может открыть архив прямо в iMage.",
     runtime: { updating: "Обновление…", updateFailed: "Не удалось обновить приложение", lengthError: "Укажите длину пароля от 1 до 12", modeError: "Выберите хотя бы один режим поиска", preparing: "Подготовка", searching: "Поиск выполняется…", paused: "Пауза", found: "Пароль найден", notFound: "Пароль не найден", stopped: "Остановлено", searchStopped: "Поиск остановлен", missingSecret: "Неверный пароль или секрет не найден", searchError: "Ошибка поиска пароля", veryLong: "очень долго", lessSecond: "меньше секунды", showPassword: "Показать пароль", hidePassword: "Скрыть пароль" },
   },
@@ -95,10 +96,11 @@ const TRANSLATIONS = {
       setupButton: "Create account", loginButton: "Sign in", or: "or", proof: "Administrator approval", createProfile: "Create profile", back: "Back",
       roles: ["User", "Administrator"],
     },
+    firebaseAuth: { loginLead: "Accounts and roles are protected by Firebase Authentication and Firestore.", loginLabels: ["Email or username", "Password"], openRegister: "Create profile", openReset: "Forgot password?", registerTitle: "Create profile", registerLead: "New profiles start as regular users. An administrator can change the role later.", registerLabels: ["Username", "Email", "Password", "Repeat password"], create: "Create profile", resetTitle: "Reset password", resetLead: "Enter an email or username and Firebase will send a password reset email.", resetLabel: "Email or username", sendReset: "Send email", back: "Back", resetSent: "Password reset email sent" },
     createCopy: ["Processing happens on this device. The image and password are never uploaded.", "Choose image", "Secret text", "Enter plain text. You can use multiple lines and any characters.", "Image password", "Your result will appear here", "Download the finished JPG or open it directly in the second tab.", "Download image ZIP"],
     editCopy: ["Use the result from the first tab or select a saved JPG/ZIP.", "Choose secret JPG or ZIP", "iMage image or archive", "Using the result from the first tab", "Image password", "Decrypted text", "Text will appear here…", "Works without a server", "PBKDF2-SHA256 and Fernet run with Web Crypto directly on the device.", "Compatible with Python V2", "Works offline", "Password is not saved", "Download updated image ZIP"],
     searchDescription: "The check runs locally and does not send the image or recovered password to the internet.",
-    admin: { description: "Create users, appoint administrators, and remove unneeded profiles on this device.", addTitle: "Add user", usersTitle: "Users", labels: ["Username", "Role", "Password", "Repeat password"], add: "Add user", roles: ["User", "Administrator"], current: "Current profile", owner: "Owner", count: (value) => `Profiles: ${value}`, remove: "Delete", confirmRemove: (name) => `Delete profile “${name}”?` },
+    admin: { description: "Manage Firebase accounts and roles.", addTitle: "Add user", usersTitle: "Firebase users", labels: ["Username", "Email", "Role", "Password", "Repeat password"], add: "Add user", roles: ["User", "Administrator"], current: "Current profile", count: (value) => `Profiles: ${value}`, remove: "Delete profile", reset: "Reset password", confirmRemove: (name) => `Delete “${name}” from Firestore?`, uid: "UID", phone: "Phone", created: "Created" },
     speedLabel: "Search speed", speedHint: "Higher values use more processing power on the device.", speedRate: "passwords/s", transferWarning: "Downloads are packaged as ZIP so messaging apps cannot alter the image. The recipient can open the archive directly in iMage.",
     runtime: { updating: "Updating…", updateFailed: "App update failed", lengthError: "Set password length from 1 to 12", modeError: "Select at least one search mode", preparing: "Preparing", searching: "Searching…", paused: "Paused", found: "Password found", notFound: "Password not found", stopped: "Stopped", searchStopped: "Search stopped", missingSecret: "Wrong password or secret not found", searchError: "Password search error", veryLong: "very long", lessSecond: "less than a second", showPassword: "Show password", hidePassword: "Hide password" },
   },
@@ -127,10 +129,11 @@ const TRANSLATIONS = {
       setupButton: "Opret konto", loginButton: "Log ind", or: "eller", proof: "Administratorgodkendelse", createProfile: "Opret profil", back: "Tilbage",
       roles: ["Bruger", "Administrator"],
     },
+    firebaseAuth: { loginLead: "Konti og roller beskyttes af Firebase Authentication og Firestore.", loginLabels: ["E-mail eller brugernavn", "Adgangskode"], openRegister: "Opret profil", openReset: "Glemt adgangskode?", registerTitle: "Opret profil", registerLead: "Nye profiler oprettes som almindelige brugere. En administrator kan senere ændre rollen.", registerLabels: ["Brugernavn", "E-mail", "Adgangskode", "Gentag adgangskode"], create: "Opret profil", resetTitle: "Nulstil adgangskode", resetLead: "Indtast e-mail eller brugernavn, så sender Firebase en e-mail til nulstilling.", resetLabel: "E-mail eller brugernavn", sendReset: "Send e-mail", back: "Tilbage", resetSent: "E-mail til nulstilling er sendt" },
     createCopy: ["Behandlingen foregår på enheden. Billedet og adgangskoden uploades aldrig.", "Vælg billede", "Hemmelig tekst", "Skriv almindelig tekst. Du kan bruge flere linjer og alle tegn.", "Billedets adgangskode", "Dit resultat vises her", "Hent den færdige JPG, eller åbn den direkte i den anden fane.", "Hent ZIP med billede"],
     editCopy: ["Brug resultatet fra den første fane, eller vælg en gemt JPG/ZIP.", "Vælg hemmelig JPG eller ZIP", "iMage-billede eller arkiv", "Bruger resultatet fra den første fane", "Billedets adgangskode", "Dekrypteret tekst", "Teksten vises her…", "Virker uden en server", "PBKDF2-SHA256 og Fernet kører med Web Crypto direkte på enheden.", "Kompatibel med Python V2", "Virker offline", "Adgangskoden gemmes ikke", "Hent ZIP med opdateret billede"],
     searchDescription: "Kontrollen kører lokalt og sender ikke billedet eller den fundne adgangskode til internettet.",
-    admin: { description: "Opret brugere, udnævn administratorer, og slet unødvendige profiler på denne enhed.", addTitle: "Tilføj bruger", usersTitle: "Brugere", labels: ["Brugernavn", "Rolle", "Adgangskode", "Gentag adgangskode"], add: "Tilføj bruger", roles: ["Bruger", "Administrator"], current: "Aktuel profil", owner: "Ejer", count: (value) => `Profiler: ${value}`, remove: "Slet", confirmRemove: (name) => `Slet profilen “${name}”?` },
+    admin: { description: "Administrer Firebase-konti og roller.", addTitle: "Tilføj bruger", usersTitle: "Firebase-brugere", labels: ["Brugernavn", "E-mail", "Rolle", "Adgangskode", "Gentag adgangskode"], add: "Tilføj bruger", roles: ["Bruger", "Administrator"], current: "Aktuel profil", count: (value) => `Profiler: ${value}`, remove: "Slet profil", reset: "Nulstil adgangskode", confirmRemove: (name) => `Slet “${name}” fra Firestore?`, uid: "UID", phone: "Telefon", created: "Oprettet" },
     speedLabel: "Søgehastighed", speedHint: "En højere værdi bruger mere processorkraft på enheden.", speedRate: "adgangskoder/s", transferWarning: "Downloads pakkes som ZIP, så beskedapps ikke kan ændre billedet. Modtageren kan åbne arkivet direkte i iMage.",
     runtime: { updating: "Opdaterer…", updateFailed: "Appen kunne ikke opdateres", lengthError: "Angiv en adgangskodelængde fra 1 til 12", modeError: "Vælg mindst én søgemetode", preparing: "Forbereder", searching: "Søger…", paused: "Pause", found: "Adgangskode fundet", notFound: "Adgangskoden blev ikke fundet", stopped: "Stoppet", searchStopped: "Søgningen er stoppet", missingSecret: "Forkert adgangskode eller ingen hemmelighed fundet", searchError: "Fejl under adgangskodesøgning", veryLong: "meget lang tid", lessSecond: "under ét sekund", showPassword: "Vis adgangskode", hidePassword: "Skjul adgangskode" },
   },
@@ -141,6 +144,55 @@ const MESSAGES = {
   en: { enterLogin: "Enter a username", passwordMin: "The password must contain at least 6 characters", mismatch: "Passwords do not match", invalidLogin: "Wrong username or password", invalidAdmin: "Wrong administrator credentials", adminRequired: "Administrator rights are required", profileExists: "A profile with this username already exists", profileCreated: (name) => `Profile ${name} created`, profileDeleted: (name) => `Profile ${name} deleted`, roleChanged: (name) => `Role for ${name} changed`, cannotChangeSelf: "You cannot change the current profile's role", cannotDeleteSelf: "You cannot delete the current profile", lastAdmin: "At least one administrator must remain", chooseImage: "Choose an image", convertFailed: "The image could not be converted", createdTitle: "Secret image created", readyDownload: (name) => `${name} is ready to download.`, encrypting: "Encrypting…", created: "Secret image created", decrypting: "Decrypting…", decrypted: "Text decrypted", saving: "Saving…", updated: "Updated image created", iosInstall: "iPhone: tap Share → Add to Home Screen", browserInstall: "Open the browser menu and select “Install app”", offlineFailed: "Offline mode could not be enabled", verificationFailed: "The created file failed verification" },
   da: { enterLogin: "Indtast et brugernavn", passwordMin: "Adgangskoden skal indeholde mindst 6 tegn", mismatch: "Adgangskoderne er ikke ens", invalidLogin: "Forkert brugernavn eller adgangskode", invalidAdmin: "Forkerte administratoroplysninger", adminRequired: "Administratorrettigheder er påkrævet", profileExists: "Der findes allerede en profil med dette brugernavn", profileCreated: (name) => `Profilen ${name} er oprettet`, profileDeleted: (name) => `Profilen ${name} er slettet`, roleChanged: (name) => `Rollen for ${name} er ændret`, cannotChangeSelf: "Du kan ikke ændre rollen for den aktuelle profil", cannotDeleteSelf: "Du kan ikke slette den aktuelle profil", lastAdmin: "Der skal være mindst én administrator", chooseImage: "Vælg et billede", convertFailed: "Billedet kunne ikke konverteres", createdTitle: "Det hemmelige billede er oprettet", readyDownload: (name) => `${name} er klar til at blive hentet.`, encrypting: "Krypterer…", created: "Det hemmelige billede er oprettet", decrypting: "Dekrypterer…", decrypted: "Teksten er dekrypteret", saving: "Gemmer…", updated: "Det opdaterede billede er oprettet", iosInstall: "iPhone: tryk på Del → Føj til hjemmeskærm", browserInstall: "Åbn browsermenuen, og vælg “Installér app”", offlineFailed: "Offlinetilstand kunne ikke aktiveres", verificationFailed: "Den oprettede fil bestod ikke kontrollen" },
 };
+
+const AUTH_ERROR_MESSAGES = {
+  ru: {
+    "app/invalid-username": "Логин должен содержать 3–32 буквы, цифры, _ или -",
+    "app/missing-identifier": "Введите email или логин",
+    "app/username-taken": "Этот логин уже занят",
+    "app/profile-not-found": "Профиль пользователя не найден в Firestore",
+    "auth/email-already-in-use": "Этот email уже используется",
+    "auth/invalid-credential": "Неверный email, логин или пароль",
+    "auth/invalid-email": "Введите правильный email",
+    "auth/weak-password": "Пароль слишком простой — используйте минимум 6 символов",
+    "auth/too-many-requests": "Слишком много попыток. Попробуйте позже",
+    "auth/network-request-failed": "Нет соединения с Firebase",
+    "permission-denied": "Firebase запретил это действие",
+    unavailable: "Firebase временно недоступен",
+  },
+  en: {
+    "app/invalid-username": "Username must contain 3–32 letters, digits, _ or -",
+    "app/missing-identifier": "Enter an email or username",
+    "app/username-taken": "This username is already taken",
+    "app/profile-not-found": "The Firestore profile was not found",
+    "auth/email-already-in-use": "This email is already in use",
+    "auth/invalid-credential": "Wrong email, username, or password",
+    "auth/invalid-email": "Enter a valid email",
+    "auth/weak-password": "The password is too weak — use at least 6 characters",
+    "auth/too-many-requests": "Too many attempts. Try again later",
+    "auth/network-request-failed": "Firebase is unreachable",
+    "permission-denied": "Firebase denied this action",
+    unavailable: "Firebase is temporarily unavailable",
+  },
+  da: {
+    "app/invalid-username": "Brugernavnet skal indeholde 3–32 bogstaver, cifre, _ eller -",
+    "app/missing-identifier": "Indtast e-mail eller brugernavn",
+    "app/username-taken": "Brugernavnet er allerede optaget",
+    "app/profile-not-found": "Firestore-profilen blev ikke fundet",
+    "auth/email-already-in-use": "E-mailen er allerede i brug",
+    "auth/invalid-credential": "Forkert e-mail, brugernavn eller adgangskode",
+    "auth/invalid-email": "Indtast en gyldig e-mail",
+    "auth/weak-password": "Adgangskoden er for svag — brug mindst 6 tegn",
+    "auth/too-many-requests": "For mange forsøg. Prøv igen senere",
+    "auth/network-request-failed": "Firebase kan ikke nås",
+    "permission-denied": "Firebase afviste handlingen",
+    unavailable: "Firebase er midlertidigt utilgængelig",
+  },
+};
+
+function authErrorMessage(error) {
+  return AUTH_ERROR_MESSAGES[language()][error?.code] || error?.message || messages().invalidLogin;
+}
 
 const ZIP_MESSAGES = {
   ru: { archiving: "Создание ZIP…", ready: "ZIP-архив создан", invalid: "Не удалось прочитать ZIP-архив", noImage: "В архиве нет JPG или PNG", encrypted: "ZIP с отдельным паролем не поддерживается", unsupported: "Этот способ сжатия ZIP не поддерживается браузером", damaged: "Файл внутри ZIP повреждён", tooLarge: "Файл слишком большой для обычного ZIP" },
@@ -213,10 +265,23 @@ function applyLanguage(code) {
   localStorage.setItem(LANGUAGE_KEY, selected);
   document.documentElement.lang = selected;
   $("#language-select").value = selected;
+  const authCopy = copy.firebaseAuth;
   $("#login-card h1").textContent = copy.auth.loginTitle;
-  $("#login-card .lead").textContent = copy.auth.loginLead;
-  [...$$("#login-card label")].forEach((label, index) => replaceLabelText(label, copy.auth.loginLabels[index]));
+  $("#login-card .lead").textContent = authCopy.loginLead;
+  [...$$("#login-card label")].forEach((label, index) => replaceLabelText(label, authCopy.loginLabels[index]));
   $("#login-form button[type='submit']").textContent = copy.auth.loginButton;
+  $("#open-register").textContent = authCopy.openRegister;
+  $("#open-reset").textContent = authCopy.openReset;
+  $("#register-card h1").textContent = authCopy.registerTitle;
+  $("#register-card .lead").textContent = authCopy.registerLead;
+  [...$$("#register-form label")].forEach((label, index) => replaceLabelText(label, authCopy.registerLabels[index]));
+  $("#register-form button[type='submit']").textContent = authCopy.create;
+  $("#register-back").textContent = authCopy.back;
+  $("#reset-card h1").textContent = authCopy.resetTitle;
+  $("#reset-card .lead").textContent = authCopy.resetLead;
+  replaceLabelText($("#reset-form label"), authCopy.resetLabel);
+  $("#reset-form button[type='submit']").textContent = authCopy.sendReset;
+  $("#reset-back").textContent = authCopy.back;
   [...$$('.tab')].forEach((tab, index) => { tab.innerHTML = `<span>0${index + 1}</span> ${copy.tabs[index]}`; });
   [...$$('.panel-heading h2')].forEach((heading, index) => { heading.textContent = copy.headings[index]; });
   const panelDescriptions = $$(".panel-heading > p");
@@ -288,7 +353,7 @@ function applyLanguage(code) {
   $("#extract-submit").textContent = copy.extract;
   $("#save-text").textContent = copy.saveText;
   $("#save-updated").textContent = copy.saveImage;
-  if (currentUser?.role === "admin") renderAdminUsers();
+  if (currentUser?.role === "admin") renderAdminUsers(adminUsers);
 }
 
 function applyTheme(theme) {
@@ -311,65 +376,15 @@ function closeSettings(force = false) {
   $("#settings-modal").classList.add("hidden");
 }
 
-function users() {
-  try {
-    const value = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    return Array.isArray(value) ? value : [];
-  } catch { return []; }
-}
-
-function saveUsers(value) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(value));
-}
-
-function ensureDefaultAdmin() {
-  const allUsers = users();
-  const index = allUsers.findIndex((user) =>
-    user.username.toLocaleLowerCase() === DEFAULT_ADMIN_USERNAME);
-  const builtIn = { ...DEFAULT_ADMIN };
-  if (index === -1) allUsers.unshift(builtIn);
-  else allUsers[index] = builtIn;
-  saveUsers(allUsers);
-  return allUsers;
-}
-
-function isProtectedAdmin(user) {
-  return user?.username?.toLocaleLowerCase() === DEFAULT_ADMIN_USERNAME;
-}
-
 function requireAdmin() {
   if (!currentUser || currentUser.role !== "admin") throw new Error(messages().adminRequired);
-}
-
-function sameBytes(a, b) {
-  if (a.length !== b.length) return false;
-  let difference = 0;
-  for (let i = 0; i < a.length; i += 1) difference |= a[i] ^ b[i];
-  return difference === 0;
-}
-
-async function makeUser(username, password, role) {
-  username = username.trim();
-  if (!username) throw new Error(messages().enterLogin);
-  if (password.length < 6) throw new Error(messages().passwordMin);
-  const salt = randomBytes(16);
-  const hash = await deriveKeyBytes(password, salt, PBKDF2_ITERATIONS);
-  return { username, role, salt: bytesToBase64(salt), passwordHash: bytesToBase64(hash) };
-}
-
-async function authenticate(username, password) {
-  const normalized = username.trim().toLocaleLowerCase();
-  const user = users().find((item) => item.username.toLocaleLowerCase() === normalized);
-  if (!user) return null;
-  const hash = await deriveKeyBytes(password, base64ToBytes(user.salt), PBKDF2_ITERATIONS);
-  return sameBytes(hash, base64ToBytes(user.passwordHash)) ? user : null;
 }
 
 function authCard(id) {
   concealPasswords();
   $("#auth-view").classList.remove("hidden");
   $("#workspace-view").classList.add("hidden");
-  ["login-card"].forEach((name) =>
+  ["login-card", "register-card", "reset-card"].forEach((name) =>
     $("#" + name).classList.toggle("hidden", name !== id));
 }
 
@@ -378,61 +393,132 @@ function showLogin() {
   $("#login-password").value = "";
 }
 
-function showWorkspace(user) {
-  currentUser = user;
-  sessionStorage.setItem(SESSION_KEY, user.username);
-  $("#auth-view").classList.add("hidden");
-  $("#workspace-view").classList.remove("hidden");
-  const isAdmin = user.role === "admin";
-  $$(".admin-only").forEach((element) => element.classList.toggle("hidden", !isAdmin));
-  if (!isAdmin && ["search-panel", "admin-panel"].includes($(".panel.active")?.id)) switchTab("create-panel");
-  if (isAdmin) renderAdminUsers();
+function showAuthCard(id) {
+  authCard(id);
 }
 
-function restoreView() {
-  const allUsers = ensureDefaultAdmin();
-  const username = sessionStorage.getItem(SESSION_KEY);
-  const user = allUsers.find((item) => item.username === username);
-  return user ? showWorkspace(user) : showLogin();
+function formatProfileTimestamp(value) {
+  if (!value?.toDate) return "—";
+  const locale = { ru: "ru-RU", en: "en-US", da: "da-DK" }[language()];
+  return value.toDate().toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
+}
+
+async function showWorkspace(profile) {
+  currentUser = profile;
+  $("#auth-view").classList.add("hidden");
+  $("#workspace-view").classList.remove("hidden");
+  const isAdmin = profile.role === "admin";
+  $$(".admin-only").forEach((element) => element.classList.toggle("hidden", !isAdmin));
+  if (!isAdmin && ["search-panel", "admin-panel"].includes($(".panel.active")?.id)) switchTab("create-panel");
+  const settings = profile.settings || {};
+  applyTheme(settings.theme || localStorage.getItem(THEME_KEY) || "light");
+  applyLanguage(settings.language || localStorage.getItem(LANGUAGE_KEY) || "ru");
+  if (isAdmin) await refreshAdminUsers();
+}
+
+async function handleFirebaseAuthState(firebaseUser) {
+  const transition = ++authTransition;
+  if (!firebaseUser) {
+    currentUser = null;
+    adminUsers = [];
+    showLogin();
+    return;
+  }
+  try {
+    const profile = await getUserProfile(firebaseUser.uid);
+    if (transition !== authTransition) return;
+    await showWorkspace({ ...profile, uid: firebaseUser.uid, email: firebaseUser.email || profile.email });
+  } catch (error) {
+    if (transition !== authTransition) return;
+    toast(authErrorMessage(error), true);
+    await signOutAccount().catch(() => {});
+  }
 }
 
 $("#login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const button = event.currentTarget.querySelector("button[type='submit']");
+  busy(button, true, TRANSLATIONS[language()].runtime.preparing);
   try {
-    const user = await authenticate($("#login-username").value, $("#login-password").value);
-    if (!user) throw new Error(messages().invalidLogin);
-    showWorkspace(user);
-  } catch (error) { toast(error.message, true); }
+    await signInAccount($("#login-identifier").value, $("#login-password").value);
+  } catch (error) {
+    toast(authErrorMessage(error), true);
+  } finally { busy(button, false); }
 });
 
-function renderAdminUsers() {
-  if (!currentUser || currentUser.role !== "admin") return;
+$("#open-register").addEventListener("click", () => showAuthCard("register-card"));
+$("#open-reset").addEventListener("click", () => showAuthCard("reset-card"));
+$("#register-back").addEventListener("click", showLogin);
+$("#reset-back").addEventListener("click", showLogin);
+
+$("#register-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
+  busy(button, true, TRANSLATIONS[language()].runtime.preparing);
+  try {
+    const password = $("#register-password").value;
+    if (password !== $("#register-confirm").value) throw new Error(messages().mismatch);
+    const profile = await createFirebaseUser({
+      username: $("#register-username").value,
+      email: $("#register-email").value,
+      password,
+    });
+    await signInAccount(profile.email, password);
+    form.reset();
+    concealPasswords();
+    toast(messages().profileCreated(profile.username));
+  } catch (error) {
+    toast(authErrorMessage(error), true);
+  } finally { busy(button, false); }
+});
+
+$("#reset-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = event.currentTarget.querySelector("button[type='submit']");
+  busy(button, true, TRANSLATIONS[language()].runtime.preparing);
+  try {
+    await sendResetForIdentifier($("#reset-identifier").value);
+    toast(TRANSLATIONS[language()].firebaseAuth.resetSent);
+    showLogin();
+  } catch (error) {
+    toast(authErrorMessage(error), true);
+  } finally { busy(button, false); }
+});
+
+function renderAdminUsers(value = adminUsers) {
+  if (currentUser?.role !== "admin") return;
   const copy = TRANSLATIONS[language()].admin;
-  const allUsers = users();
   const list = $("#admin-user-list");
   list.replaceChildren();
-  $("#admin-users-count").textContent = copy.count(allUsers.length);
-  allUsers.forEach((user) => {
+  $("#admin-users-count").textContent = copy.count(value.length);
+  value.forEach((user) => {
     const row = document.createElement("div");
     row.className = "admin-user-row";
 
     const identity = document.createElement("div");
     identity.className = "admin-user-identity";
     const name = document.createElement("strong");
-    name.textContent = user.username;
+    name.textContent = user.username || user.email || user.uid;
     identity.appendChild(name);
-    const labels = [];
-    if (isProtectedAdmin(user)) labels.push(copy.owner);
-    if (user.username === currentUser.username) labels.push(copy.current);
-    if (labels.length) {
+    if (user.uid === currentUser.uid) {
       const current = document.createElement("small");
-      current.textContent = labels.join(" · ");
+      current.textContent = copy.current;
       identity.appendChild(current);
     }
+    const meta = document.createElement("div");
+    meta.className = "admin-user-meta";
+    [user.email, `${copy.phone}: ${user.phone || "—"}`, `${copy.uid}: ${user.uid}`, `${copy.created}: ${formatProfileTimestamp(user.createdAt)}`]
+      .forEach((text) => {
+        const item = document.createElement("small");
+        item.textContent = text;
+        meta.appendChild(item);
+      });
+    identity.appendChild(meta);
 
     const role = document.createElement("select");
     role.className = "admin-role-select";
-    role.dataset.username = user.username;
+    role.dataset.uid = user.uid;
     [["user", copy.roles[0]], ["admin", copy.roles[1]]].forEach(([value, label]) => {
       const option = document.createElement("option");
       option.value = value;
@@ -440,88 +526,99 @@ function renderAdminUsers() {
       role.appendChild(option);
     });
     role.value = user.role;
-    role.disabled = user.username === currentUser.username || isProtectedAdmin(user);
+    role.disabled = user.uid === currentUser.uid;
 
+    const actions = document.createElement("div");
+    actions.className = "admin-row-actions";
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "secondary admin-reset";
+    reset.dataset.uid = user.uid;
+    reset.textContent = copy.reset;
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "danger-button admin-delete";
-    remove.dataset.username = user.username;
+    remove.dataset.uid = user.uid;
     remove.textContent = copy.remove;
-    remove.disabled = user.username === currentUser.username || isProtectedAdmin(user);
-    row.append(identity, role, remove);
+    remove.disabled = user.uid === currentUser.uid;
+    actions.append(reset, remove);
+    row.append(identity, role, actions);
     list.appendChild(row);
   });
+}
+
+async function refreshAdminUsers() {
+  requireAdmin();
+  adminUsers = await listUserProfiles();
+  renderAdminUsers(adminUsers);
 }
 
 $("#admin-user-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = event.currentTarget;
+  const button = $("#admin-create-user");
+  busy(button, true, TRANSLATIONS[language()].runtime.preparing);
   try {
     requireAdmin();
     if ($("#admin-new-password").value !== $("#admin-new-confirm").value) throw new Error(messages().mismatch);
-    const allUsers = users();
-    const username = $("#admin-new-username").value.trim();
-    if (allUsers.some((item) => item.username.toLocaleLowerCase() === username.toLocaleLowerCase()))
-      throw new Error(messages().profileExists);
-    const user = await makeUser(username, $("#admin-new-password").value, $("#admin-new-role").value);
-    allUsers.push(user);
-    saveUsers(allUsers);
+    const profile = await createFirebaseUser({
+      username: $("#admin-new-username").value,
+      email: $("#admin-new-email").value,
+      password: $("#admin-new-password").value,
+    });
+    if ($("#admin-new-role").value === "admin") await changeUserRole(profile.uid, "admin");
     form.reset();
     concealPasswords();
-    renderAdminUsers();
-    toast(messages().profileCreated(user.username));
-  } catch (error) { toast(error.message, true); }
+    await refreshAdminUsers();
+    toast(messages().profileCreated(profile.username));
+  } catch (error) { toast(authErrorMessage(error), true); }
+  finally { busy(button, false); }
 });
 
-$("#admin-user-list").addEventListener("change", (event) => {
+$("#admin-user-list").addEventListener("change", async (event) => {
   const select = event.target.closest(".admin-role-select");
   if (!select) return;
   try {
     requireAdmin();
-    const allUsers = users();
-    const user = allUsers.find((item) => item.username === select.dataset.username);
-    if (!user) return renderAdminUsers();
-    if (isProtectedAdmin(user)) throw new Error(messages().adminRequired);
-    if (user.username === currentUser.username) throw new Error(messages().cannotChangeSelf);
-    if (user.role === "admin" && select.value !== "admin" && allUsers.filter((item) => item.role === "admin").length === 1)
+    const user = adminUsers.find((item) => item.uid === select.dataset.uid);
+    if (!user) return refreshAdminUsers();
+    if (user.uid === currentUser.uid) throw new Error(messages().cannotChangeSelf);
+    if (user.role === "admin" && select.value !== "admin" && adminUsers.filter((item) => item.role === "admin").length === 1)
       throw new Error(messages().lastAdmin);
-    user.role = select.value === "admin" ? "admin" : "user";
-    saveUsers(allUsers);
-    renderAdminUsers();
+    await changeUserRole(user.uid, select.value);
+    await refreshAdminUsers();
     toast(messages().roleChanged(user.username));
   } catch (error) {
-    renderAdminUsers();
-    toast(error.message, true);
+    await refreshAdminUsers().catch(() => {});
+    toast(authErrorMessage(error), true);
   }
 });
 
-$("#admin-user-list").addEventListener("click", (event) => {
-  const button = event.target.closest(".admin-delete");
+$("#admin-user-list").addEventListener("click", async (event) => {
+  const button = event.target.closest(".admin-delete, .admin-reset");
   if (!button) return;
   try {
     requireAdmin();
-    const username = button.dataset.username;
-    if (username === currentUser.username) throw new Error(messages().cannotDeleteSelf);
-    const allUsers = users();
-    const target = allUsers.find((item) => item.username === username);
-    if (!target) return renderAdminUsers();
-    if (isProtectedAdmin(target)) throw new Error(messages().adminRequired);
-    if (target.role === "admin" && allUsers.filter((item) => item.role === "admin").length === 1)
-      throw new Error(messages().lastAdmin);
-    if (!window.confirm(TRANSLATIONS[language()].admin.confirmRemove(username))) return;
-    saveUsers(allUsers.filter((item) => item.username !== username));
-    renderAdminUsers();
-    toast(messages().profileDeleted(username));
-  } catch (error) { toast(error.message, true); }
+    const target = adminUsers.find((item) => item.uid === button.dataset.uid);
+    if (!target) return refreshAdminUsers();
+    if (button.classList.contains("admin-reset")) {
+      await sendResetForEmail(target.email);
+      toast(TRANSLATIONS[language()].firebaseAuth.resetSent);
+      return;
+    }
+    if (target.uid === currentUser.uid) throw new Error(messages().cannotDeleteSelf);
+    if (!window.confirm(TRANSLATIONS[language()].admin.confirmRemove(target.username || target.email))) return;
+    await removeUserProfile(target);
+    await refreshAdminUsers();
+    toast(messages().profileDeleted(target.username || target.email));
+  } catch (error) { toast(authErrorMessage(error), true); }
 });
 
-$("#logout").addEventListener("click", () => {
+$("#logout").addEventListener("click", async () => {
   closeSettings(true);
   if (passwordWorker) passwordWorker.terminate();
   passwordWorker = null;
-  currentUser = null;
-  sessionStorage.removeItem(SESSION_KEY);
-  showLogin();
+  await signOutAccount().catch((error) => toast(authErrorMessage(error), true));
 });
 
 $("#settings-button").addEventListener("click", openSettings);
@@ -531,11 +628,25 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeSettings();
 });
 
-$("#theme-toggle").addEventListener("change", (event) =>
-  applyTheme(event.target.checked ? "dark" : "light"));
+$("#theme-toggle").addEventListener("change", async (event) => {
+  const theme = event.target.checked ? "dark" : "light";
+  applyTheme(theme);
+  if (!currentUser) return;
+  try {
+    await saveProfileSettings(currentUser.uid, { theme });
+    currentUser.settings = { ...(currentUser.settings || {}), theme };
+  } catch (error) { toast(authErrorMessage(error), true); }
+});
 
-$("#language-select").addEventListener("change", (event) =>
-  applyLanguage(event.target.value));
+$("#language-select").addEventListener("change", async (event) => {
+  const selected = event.target.value;
+  applyLanguage(selected);
+  if (!currentUser) return;
+  try {
+    await saveProfileSettings(currentUser.uid, { language: selected });
+    currentUser.settings = { ...(currentUser.settings || {}), language: selected };
+  } catch (error) { toast(authErrorMessage(error), true); }
+});
 
 $("#force-update").addEventListener("click", async () => {
   const button = $("#force-update");
@@ -1078,4 +1189,7 @@ installPasswordToggles();
 applyTheme(localStorage.getItem(THEME_KEY) ||
   (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
 applyLanguage(language());
-restoreView();
+observeAuthState(handleFirebaseAuthState).catch((error) => {
+  showLogin();
+  toast(authErrorMessage(error), true);
+});

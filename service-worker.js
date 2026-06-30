@@ -1,8 +1,10 @@
-const CACHE_NAME = "image-pwa-v15";
+const CACHE_NAME = "image-pwa-v104";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./pwa.js",
+  "./firebase-config.js",
+  "./firebase-users.js",
   "./pwa-crypto.js",
   "./pwa-download-options.js",
   "./password-worker.js",

@@ -20,11 +20,42 @@
       <div class="brand-mark">{ }</div>
       <p class="eyebrow">iMage · PWA</p>
       <h1>Вход</h1>
-      <p class="lead">Все данные и профили остаются локально на этом устройстве.</p>
+      <p class="lead">Аккаунты и роли защищены Firebase Authentication и Firestore.</p>
       <form id="login-form" class="stack-form">
-        <label>Логин<input id="login-username" required autocomplete="username"></label>
+        <label>Email или логин<input id="login-identifier" required autocomplete="username"></label>
         <label>Пароль<input id="login-password" type="password" required autocomplete="current-password"></label>
         <button class="primary wide" type="submit">Войти</button>
+      </form>
+      <div class="auth-link-row">
+        <button id="open-register" class="secondary wide" type="button">Создать профиль</button>
+        <button id="open-reset" class="ghost wide" type="button">Забыли пароль?</button>
+      </div>
+    </section>
+
+    <section id="register-card" class="auth-card hidden">
+      <div class="brand-mark">＋</div>
+      <p class="eyebrow">FIREBASE PROFILE</p>
+      <h1>Создать профиль</h1>
+      <p class="lead">Новый профиль создаётся как обычный пользователь. Роль администратора назначается в админке.</p>
+      <form id="register-form" class="stack-form">
+        <label>Логин<input id="register-username" minlength="3" maxlength="32" required autocomplete="username"></label>
+        <label>Email<input id="register-email" type="email" required autocomplete="email"></label>
+        <label>Пароль<input id="register-password" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Повторите пароль<input id="register-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+        <button class="primary wide" type="submit">Создать профиль</button>
+        <button id="register-back" class="ghost wide" type="button">Назад</button>
+      </form>
+    </section>
+
+    <section id="reset-card" class="auth-card hidden">
+      <div class="brand-mark">?</div>
+      <p class="eyebrow">PASSWORD RESET</p>
+      <h1>Восстановление пароля</h1>
+      <p class="lead">Введите email или логин — Firebase отправит письмо для создания нового пароля.</p>
+      <form id="reset-form" class="stack-form">
+        <label>Email или логин<input id="reset-identifier" required autocomplete="username"></label>
+        <button class="primary wide" type="submit">Отправить письмо</button>
+        <button id="reset-back" class="ghost wide" type="button">Назад</button>
       </form>
     </section>
   </main>
@@ -170,6 +201,7 @@
           <form id="admin-user-form" class="admin-create-card stack-form">
             <h3>Добавить пользователя</h3>
             <label>Логин<input id="admin-new-username" required autocomplete="off"></label>
+            <label>Email<input id="admin-new-email" type="email" required autocomplete="off"></label>
             <label>Роль
               <select id="admin-new-role"><option value="user">Пользователь</option><option value="admin">Администратор</option></select>
             </label>
