@@ -30,6 +30,7 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 
 const USERNAME_PATTERN = /^[\p{L}\p{N}_-]{3,32}$/u;
+const TECHNICAL_EMAIL_DOMAIN = "no-email.image-5e192.local";
 
 function accountError(code, fallback = "Firebase request failed") {
   const error = new Error(fallback);
@@ -48,14 +49,29 @@ export function normalizeEmail(value) {
   return String(value || "").trim().toLocaleLowerCase();
 }
 
+function technicalEmail(usernameLower) {
+  return `${usernameLower}@${TECHNICAL_EMAIL_DOMAIN}`;
+}
+
+function isTechnicalEmail(email) {
+  return normalizeEmail(email).endsWith(`@${TECHNICAL_EMAIL_DOMAIN}`);
+}
+
+async function resolveUsernameAccount(identifier) {
+  const { usernameLower } = normalizeUsername(identifier);
+  const snapshot = await getDoc(doc(db, "usernames", usernameLower));
+  if (!snapshot.exists()) throw accountError("auth/invalid-credential");
+  return snapshot.data();
+}
+
 export async function resolveEmail(identifier) {
   const normalized = String(identifier || "").trim();
   if (!normalized) throw accountError("app/missing-identifier");
   if (normalized.includes("@")) return normalizeEmail(normalized);
-  const { usernameLower } = normalizeUsername(normalized);
-  const snapshot = await getDoc(doc(db, "usernames", usernameLower));
-  if (!snapshot.exists() || !snapshot.data().email) throw accountError("auth/invalid-credential");
-  return normalizeEmail(snapshot.data().email);
+  const account = await resolveUsernameAccount(normalized);
+  const authEmail = normalizeEmail(account.authEmail || account.email);
+  if (!authEmail) throw accountError("auth/invalid-credential");
+  return authEmail;
 }
 
 export async function signInAccount(identifier, password) {
@@ -68,13 +84,25 @@ export async function signOutAccount() {
 }
 
 export async function sendResetForIdentifier(identifier) {
-  const email = await resolveEmail(identifier);
+  const normalized = String(identifier || "").trim();
+  if (!normalized) throw accountError("app/missing-identifier");
+  let email;
+  if (normalized.includes("@")) {
+    email = normalizeEmail(normalized);
+    if (isTechnicalEmail(email)) throw accountError("app/no-recovery-email");
+  } else {
+    const account = await resolveUsernameAccount(normalized);
+    const hasRealEmail = account.hasRealEmail ?? Boolean(account.email);
+    email = normalizeEmail(account.email);
+    if (!hasRealEmail || !email) throw accountError("app/no-recovery-email");
+  }
   await sendPasswordResetEmail(auth, email);
   return email;
 }
 
 export async function sendResetForEmail(email) {
   const normalized = normalizeEmail(email);
+  if (!normalized || isTechnicalEmail(normalized)) throw accountError("app/no-recovery-email");
   await sendPasswordResetEmail(auth, normalized);
   return normalized;
 }
@@ -90,10 +118,13 @@ export async function observeAuthState(callback) {
   return onAuthStateChanged(auth, callback);
 }
 
-export async function createFirebaseUser({ username: rawUsername, email: rawEmail, password }) {
+export async function createFirebaseUser({ username: rawUsername, email: rawEmail, phone: rawPhone = "", password }) {
   const { username, usernameLower } = normalizeUsername(rawUsername);
   const email = normalizeEmail(rawEmail);
-  if (!email) throw accountError("auth/invalid-email");
+  const phone = String(rawPhone || "").trim();
+  const hasRealEmail = Boolean(email);
+  const authEmail = hasRealEmail ? email : technicalEmail(usernameLower);
+  const recoveryMode = hasRealEmail ? "email" : "adminOnly";
 
   const existing = await getDoc(doc(db, "usernames", usernameLower));
   if (existing.exists()) throw accountError("app/username-taken");
@@ -107,7 +138,7 @@ export async function createFirebaseUser({ username: rawUsername, email: rawEmai
   let credential = null;
   let profileCreated = false;
   try {
-    credential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    credential = await createUserWithEmailAndPassword(secondaryAuth, authEmail, password);
     const uid = credential.user.uid;
     await runTransaction(secondaryDb, async (transaction) => {
       const usernameRef = doc(secondaryDb, "usernames", usernameLower);
@@ -117,10 +148,13 @@ export async function createFirebaseUser({ username: rawUsername, email: rawEmai
       transaction.set(doc(secondaryDb, "users", uid), {
         uid,
         email,
+        authEmail,
+        hasRealEmail,
         username,
         usernameLower,
-        phone: "",
+        phone,
         role: "user",
+        recoveryMode,
         settings: { theme: "light", language: "ru" },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -128,11 +162,16 @@ export async function createFirebaseUser({ username: rawUsername, email: rawEmai
       transaction.set(usernameRef, {
         uid,
         email,
+        authEmail,
+        hasRealEmail,
         createdAt: serverTimestamp(),
       });
     });
     profileCreated = true;
-    return { uid, email, username, usernameLower, role: "user", phone: "", settings: { theme: "light", language: "ru" } };
+    return {
+      uid, email, authEmail, hasRealEmail, username, usernameLower, phone,
+      role: "user", recoveryMode, settings: { theme: "light", language: "ru" },
+    };
   } catch (error) {
     if (credential?.user && !profileCreated) await deleteUser(credential.user).catch(() => {});
     throw error;

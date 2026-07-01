@@ -63,11 +63,11 @@ const TRANSLATIONS = {
       setupButton: "Создать аккаунт", loginButton: "Войти", or: "или", proof: "Подтверждение администратора", createProfile: "Создать профиль", back: "Назад",
       roles: ["Пользователь", "Администратор"],
     },
-    firebaseAuth: { loginLead: "Аккаунты и роли защищены Firebase Authentication и Firestore.", loginLabels: ["Email или логин", "Пароль"], openRegister: "Создать профиль", openReset: "Забыли пароль?", registerTitle: "Создать профиль", registerLead: "Новый профиль создаётся как обычный пользователь. Роль администратора назначается в админке.", registerLabels: ["Логин", "Email", "Пароль", "Повторите пароль"], create: "Создать профиль", resetTitle: "Восстановление пароля", resetLead: "Введите email или логин — Firebase отправит письмо для создания нового пароля.", resetLabel: "Email или логин", sendReset: "Отправить письмо", back: "Назад", resetSent: "Письмо для сброса пароля отправлено" },
+    firebaseAuth: { loginLead: "Аккаунты и роли защищены Firebase Authentication и Firestore.", loginLabels: ["Email или логин", "Пароль"], openRegister: "Создать профиль", openReset: "Забыли пароль?", registerTitle: "Создать профиль", registerLead: "Email и телефон необязательны. Без email пароль сможет сменить только администратор.", registerLabels: ["Логин *", "Email", "Телефон", "Пароль *", "Повторите пароль *"], create: "Создать профиль", resetTitle: "Восстановление пароля", resetLead: "Введите email или логин — Firebase отправит письмо для создания нового пароля.", resetLabel: "Email или логин", sendReset: "Отправить письмо", back: "Назад", resetSent: "Письмо для сброса пароля отправлено" },
     createCopy: ["Обработка выполняется на телефоне. Изображение и пароль никуда не отправляются.", "Выбрать изображение", "Секретный текст", "Введите обычный текст. Можно использовать несколько строк и любые символы.", "Пароль изображения", "Здесь появится результат", "Готовый JPG можно скачать или сразу открыть во второй вкладке.", "Скачать ZIP с изображением"],
     editCopy: ["Используйте результат первой вкладки или выберите сохранённый JPG/ZIP.", "Выбрать секретный JPG или ZIP", "Изображение или архив iMage", "Используется результат первой вкладки", "Пароль изображения", "Расшифрованный текст", "Текст появится здесь…", "Работает без сервера", "PBKDF2-SHA256 и Fernet выполняются через Web Crypto прямо на устройстве.", "Совместимо с Python V2", "Работает офлайн", "Пароль не сохраняется", "Скачать ZIP с обновлённым изображением"],
     searchDescription: "Проверка выполняется локально и не отправляет изображение или найденный пароль в интернет.",
-    admin: { description: "Управляйте аккаунтами и ролями из Firebase.", addTitle: "Добавить пользователя", usersTitle: "Пользователи Firebase", labels: ["Логин", "Email", "Роль", "Пароль", "Повторите пароль"], add: "Добавить пользователя", roles: ["Пользователь", "Администратор"], current: "Текущий профиль", count: (value) => `Всего профилей: ${value}`, remove: "Удалить профиль", reset: "Сбросить пароль", confirmRemove: (name) => `Удалить профиль «${name}» из Firestore?`, uid: "UID", phone: "Телефон", created: "Создан" },
+    admin: { description: "Управляйте аккаунтами и ролями из Firebase.", addTitle: "Добавить пользователя", usersTitle: "Пользователи Firebase", labels: ["Логин *", "Email", "Телефон", "Роль", "Пароль *", "Повторите пароль *"], add: "Добавить пользователя", roles: ["Пользователь", "Администратор"], current: "Текущий профиль", count: (value) => `Всего профилей: ${value}`, remove: "Удалить профиль", reset: "Сбросить пароль по email", changePassword: "Сменить пароль админом", noEmail: "без email", noEmailReset: "Нет email — пароль меняет только администратор", cloudFunction: "Нужна Cloud Function", recovery: "Восстановление", confirmRemove: (name) => `Удалить профиль «${name}» из Firestore?`, uid: "UID", phone: "Телефон", created: "Создан" },
     speedLabel: "Скорость поиска", speedHint: "Чем выше значение, тем больше нагрузка на устройство.", speedRate: "паролей/с", transferWarning: "Скачивание создаёт ZIP, чтобы мессенджер не изменил изображение. Получатель может открыть архив прямо в iMage.",
     runtime: { updating: "Обновление…", updateFailed: "Не удалось обновить приложение", lengthError: "Укажите длину пароля от 1 до 12", modeError: "Выберите хотя бы один режим поиска", preparing: "Подготовка", searching: "Поиск выполняется…", paused: "Пауза", found: "Пароль найден", notFound: "Пароль не найден", stopped: "Остановлено", searchStopped: "Поиск остановлен", missingSecret: "Неверный пароль или секрет не найден", searchError: "Ошибка поиска пароля", veryLong: "очень долго", lessSecond: "меньше секунды", showPassword: "Показать пароль", hidePassword: "Скрыть пароль" },
   },
@@ -96,11 +96,11 @@ const TRANSLATIONS = {
       setupButton: "Create account", loginButton: "Sign in", or: "or", proof: "Administrator approval", createProfile: "Create profile", back: "Back",
       roles: ["User", "Administrator"],
     },
-    firebaseAuth: { loginLead: "Accounts and roles are protected by Firebase Authentication and Firestore.", loginLabels: ["Email or username", "Password"], openRegister: "Create profile", openReset: "Forgot password?", registerTitle: "Create profile", registerLead: "New profiles start as regular users. An administrator can change the role later.", registerLabels: ["Username", "Email", "Password", "Repeat password"], create: "Create profile", resetTitle: "Reset password", resetLead: "Enter an email or username and Firebase will send a password reset email.", resetLabel: "Email or username", sendReset: "Send email", back: "Back", resetSent: "Password reset email sent" },
+    firebaseAuth: { loginLead: "Accounts and roles are protected by Firebase Authentication and Firestore.", loginLabels: ["Email or username", "Password"], openRegister: "Create profile", openReset: "Forgot password?", registerTitle: "Create profile", registerLead: "Email and phone are optional. Without email, only an administrator can change the password.", registerLabels: ["Username *", "Email", "Phone", "Password *", "Repeat password *"], create: "Create profile", resetTitle: "Reset password", resetLead: "Enter an email or username and Firebase will send a password reset email.", resetLabel: "Email or username", sendReset: "Send email", back: "Back", resetSent: "Password reset email sent" },
     createCopy: ["Processing happens on this device. The image and password are never uploaded.", "Choose image", "Secret text", "Enter plain text. You can use multiple lines and any characters.", "Image password", "Your result will appear here", "Download the finished JPG or open it directly in the second tab.", "Download image ZIP"],
     editCopy: ["Use the result from the first tab or select a saved JPG/ZIP.", "Choose secret JPG or ZIP", "iMage image or archive", "Using the result from the first tab", "Image password", "Decrypted text", "Text will appear here…", "Works without a server", "PBKDF2-SHA256 and Fernet run with Web Crypto directly on the device.", "Compatible with Python V2", "Works offline", "Password is not saved", "Download updated image ZIP"],
     searchDescription: "The check runs locally and does not send the image or recovered password to the internet.",
-    admin: { description: "Manage Firebase accounts and roles.", addTitle: "Add user", usersTitle: "Firebase users", labels: ["Username", "Email", "Role", "Password", "Repeat password"], add: "Add user", roles: ["User", "Administrator"], current: "Current profile", count: (value) => `Profiles: ${value}`, remove: "Delete profile", reset: "Reset password", confirmRemove: (name) => `Delete “${name}” from Firestore?`, uid: "UID", phone: "Phone", created: "Created" },
+    admin: { description: "Manage Firebase accounts and roles.", addTitle: "Add user", usersTitle: "Firebase users", labels: ["Username *", "Email", "Phone", "Role", "Password *", "Repeat password *"], add: "Add user", roles: ["User", "Administrator"], current: "Current profile", count: (value) => `Profiles: ${value}`, remove: "Delete profile", reset: "Reset password by email", changePassword: "Change password as admin", noEmail: "no email", noEmailReset: "No email — only an administrator can change the password", cloudFunction: "Cloud Function required", recovery: "Recovery", confirmRemove: (name) => `Delete “${name}” from Firestore?`, uid: "UID", phone: "Phone", created: "Created" },
     speedLabel: "Search speed", speedHint: "Higher values use more processing power on the device.", speedRate: "passwords/s", transferWarning: "Downloads are packaged as ZIP so messaging apps cannot alter the image. The recipient can open the archive directly in iMage.",
     runtime: { updating: "Updating…", updateFailed: "App update failed", lengthError: "Set password length from 1 to 12", modeError: "Select at least one search mode", preparing: "Preparing", searching: "Searching…", paused: "Paused", found: "Password found", notFound: "Password not found", stopped: "Stopped", searchStopped: "Search stopped", missingSecret: "Wrong password or secret not found", searchError: "Password search error", veryLong: "very long", lessSecond: "less than a second", showPassword: "Show password", hidePassword: "Hide password" },
   },
@@ -129,11 +129,11 @@ const TRANSLATIONS = {
       setupButton: "Opret konto", loginButton: "Log ind", or: "eller", proof: "Administratorgodkendelse", createProfile: "Opret profil", back: "Tilbage",
       roles: ["Bruger", "Administrator"],
     },
-    firebaseAuth: { loginLead: "Konti og roller beskyttes af Firebase Authentication og Firestore.", loginLabels: ["E-mail eller brugernavn", "Adgangskode"], openRegister: "Opret profil", openReset: "Glemt adgangskode?", registerTitle: "Opret profil", registerLead: "Nye profiler oprettes som almindelige brugere. En administrator kan senere ændre rollen.", registerLabels: ["Brugernavn", "E-mail", "Adgangskode", "Gentag adgangskode"], create: "Opret profil", resetTitle: "Nulstil adgangskode", resetLead: "Indtast e-mail eller brugernavn, så sender Firebase en e-mail til nulstilling.", resetLabel: "E-mail eller brugernavn", sendReset: "Send e-mail", back: "Tilbage", resetSent: "E-mail til nulstilling er sendt" },
+    firebaseAuth: { loginLead: "Konti og roller beskyttes af Firebase Authentication og Firestore.", loginLabels: ["E-mail eller brugernavn", "Adgangskode"], openRegister: "Opret profil", openReset: "Glemt adgangskode?", registerTitle: "Opret profil", registerLead: "E-mail og telefon er valgfrie. Uden e-mail kan kun en administrator ændre adgangskoden.", registerLabels: ["Brugernavn *", "E-mail", "Telefon", "Adgangskode *", "Gentag adgangskode *"], create: "Opret profil", resetTitle: "Nulstil adgangskode", resetLead: "Indtast e-mail eller brugernavn, så sender Firebase en e-mail til nulstilling.", resetLabel: "E-mail eller brugernavn", sendReset: "Send e-mail", back: "Tilbage", resetSent: "E-mail til nulstilling er sendt" },
     createCopy: ["Behandlingen foregår på enheden. Billedet og adgangskoden uploades aldrig.", "Vælg billede", "Hemmelig tekst", "Skriv almindelig tekst. Du kan bruge flere linjer og alle tegn.", "Billedets adgangskode", "Dit resultat vises her", "Hent den færdige JPG, eller åbn den direkte i den anden fane.", "Hent ZIP med billede"],
     editCopy: ["Brug resultatet fra den første fane, eller vælg en gemt JPG/ZIP.", "Vælg hemmelig JPG eller ZIP", "iMage-billede eller arkiv", "Bruger resultatet fra den første fane", "Billedets adgangskode", "Dekrypteret tekst", "Teksten vises her…", "Virker uden en server", "PBKDF2-SHA256 og Fernet kører med Web Crypto direkte på enheden.", "Kompatibel med Python V2", "Virker offline", "Adgangskoden gemmes ikke", "Hent ZIP med opdateret billede"],
     searchDescription: "Kontrollen kører lokalt og sender ikke billedet eller den fundne adgangskode til internettet.",
-    admin: { description: "Administrer Firebase-konti og roller.", addTitle: "Tilføj bruger", usersTitle: "Firebase-brugere", labels: ["Brugernavn", "E-mail", "Rolle", "Adgangskode", "Gentag adgangskode"], add: "Tilføj bruger", roles: ["Bruger", "Administrator"], current: "Aktuel profil", count: (value) => `Profiler: ${value}`, remove: "Slet profil", reset: "Nulstil adgangskode", confirmRemove: (name) => `Slet “${name}” fra Firestore?`, uid: "UID", phone: "Telefon", created: "Oprettet" },
+    admin: { description: "Administrer Firebase-konti og roller.", addTitle: "Tilføj bruger", usersTitle: "Firebase-brugere", labels: ["Brugernavn *", "E-mail", "Telefon", "Rolle", "Adgangskode *", "Gentag adgangskode *"], add: "Tilføj bruger", roles: ["Bruger", "Administrator"], current: "Aktuel profil", count: (value) => `Profiler: ${value}`, remove: "Slet profil", reset: "Nulstil via e-mail", changePassword: "Skift adgangskode som admin", noEmail: "ingen e-mail", noEmailReset: "Ingen e-mail — kun en administrator kan ændre adgangskoden", cloudFunction: "Cloud Function påkrævet", recovery: "Gendannelse", confirmRemove: (name) => `Slet “${name}” fra Firestore?`, uid: "UID", phone: "Telefon", created: "Oprettet" },
     speedLabel: "Søgehastighed", speedHint: "En højere værdi bruger mere processorkraft på enheden.", speedRate: "adgangskoder/s", transferWarning: "Downloads pakkes som ZIP, så beskedapps ikke kan ændre billedet. Modtageren kan åbne arkivet direkte i iMage.",
     runtime: { updating: "Opdaterer…", updateFailed: "Appen kunne ikke opdateres", lengthError: "Angiv en adgangskodelængde fra 1 til 12", modeError: "Vælg mindst én søgemetode", preparing: "Forbereder", searching: "Søger…", paused: "Pause", found: "Adgangskode fundet", notFound: "Adgangskoden blev ikke fundet", stopped: "Stoppet", searchStopped: "Søgningen er stoppet", missingSecret: "Forkert adgangskode eller ingen hemmelighed fundet", searchError: "Fejl under adgangskodesøgning", veryLong: "meget lang tid", lessSecond: "under ét sekund", showPassword: "Vis adgangskode", hidePassword: "Skjul adgangskode" },
   },
@@ -151,6 +151,7 @@ const AUTH_ERROR_MESSAGES = {
     "app/missing-identifier": "Введите email или логин",
     "app/username-taken": "Этот логин уже занят",
     "app/profile-not-found": "Профиль пользователя не найден в Firestore",
+    "app/no-recovery-email": "У этого аккаунта нет email. Обратитесь к администратору для смены пароля.",
     "auth/email-already-in-use": "Этот email уже используется",
     "auth/invalid-credential": "Неверный email, логин или пароль",
     "auth/invalid-email": "Введите правильный email",
@@ -165,6 +166,7 @@ const AUTH_ERROR_MESSAGES = {
     "app/missing-identifier": "Enter an email or username",
     "app/username-taken": "This username is already taken",
     "app/profile-not-found": "The Firestore profile was not found",
+    "app/no-recovery-email": "This account has no email. Contact an administrator to change the password.",
     "auth/email-already-in-use": "This email is already in use",
     "auth/invalid-credential": "Wrong email, username, or password",
     "auth/invalid-email": "Enter a valid email",
@@ -179,6 +181,7 @@ const AUTH_ERROR_MESSAGES = {
     "app/missing-identifier": "Indtast e-mail eller brugernavn",
     "app/username-taken": "Brugernavnet er allerede optaget",
     "app/profile-not-found": "Firestore-profilen blev ikke fundet",
+    "app/no-recovery-email": "Denne konto har ingen e-mail. Kontakt en administrator for at ændre adgangskoden.",
     "auth/email-already-in-use": "E-mailen er allerede i brug",
     "auth/invalid-credential": "Forkert e-mail, brugernavn eller adgangskode",
     "auth/invalid-email": "Indtast en gyldig e-mail",
@@ -427,7 +430,7 @@ async function handleFirebaseAuthState(firebaseUser) {
   try {
     const profile = await getUserProfile(firebaseUser.uid);
     if (transition !== authTransition) return;
-    await showWorkspace({ ...profile, uid: firebaseUser.uid, email: firebaseUser.email || profile.email });
+    await showWorkspace({ ...profile, uid: firebaseUser.uid, email: profile.email || "" });
   } catch (error) {
     if (transition !== authTransition) return;
     toast(authErrorMessage(error), true);
@@ -462,9 +465,10 @@ $("#register-form").addEventListener("submit", async (event) => {
     const profile = await createFirebaseUser({
       username: $("#register-username").value,
       email: $("#register-email").value,
+      phone: $("#register-phone").value,
       password,
     });
-    await signInAccount(profile.email, password);
+    await signInAccount(profile.username, password);
     form.reset();
     concealPasswords();
     toast(messages().profileCreated(profile.username));
@@ -508,7 +512,15 @@ function renderAdminUsers(value = adminUsers) {
     }
     const meta = document.createElement("div");
     meta.className = "admin-user-meta";
-    [user.email, `${copy.phone}: ${user.phone || "—"}`, `${copy.uid}: ${user.uid}`, `${copy.created}: ${formatProfileTimestamp(user.createdAt)}`]
+    const hasRealEmail = user.hasRealEmail ?? Boolean(user.email);
+    const recoveryMode = user.recoveryMode || (hasRealEmail ? "email" : "adminOnly");
+    [
+      user.email || copy.noEmail,
+      `${copy.phone}: ${user.phone || "—"}`,
+      `${copy.recovery}: ${recoveryMode}`,
+      `${copy.uid}: ${user.uid}`,
+      `${copy.created}: ${formatProfileTimestamp(user.createdAt)}`,
+    ]
       .forEach((text) => {
         const item = document.createElement("small");
         item.textContent = text;
@@ -535,13 +547,28 @@ function renderAdminUsers(value = adminUsers) {
     reset.className = "secondary admin-reset";
     reset.dataset.uid = user.uid;
     reset.textContent = copy.reset;
+    reset.disabled = !hasRealEmail;
+    if (!hasRealEmail) reset.title = copy.noEmailReset;
+    const resetHint = document.createElement("small");
+    resetHint.className = "admin-action-note";
+    resetHint.textContent = copy.noEmailReset;
+    resetHint.hidden = hasRealEmail;
+    const changePassword = document.createElement("button");
+    changePassword.type = "button";
+    changePassword.className = "secondary admin-change-password";
+    changePassword.textContent = copy.changePassword;
+    changePassword.disabled = true;
+    changePassword.title = copy.cloudFunction;
+    const changePasswordHint = document.createElement("small");
+    changePasswordHint.className = "admin-action-note";
+    changePasswordHint.textContent = copy.cloudFunction;
     const remove = document.createElement("button");
     remove.type = "button";
     remove.className = "danger-button admin-delete";
     remove.dataset.uid = user.uid;
     remove.textContent = copy.remove;
     remove.disabled = user.uid === currentUser.uid;
-    actions.append(reset, remove);
+    actions.append(reset, resetHint, changePassword, changePasswordHint, remove);
     row.append(identity, role, actions);
     list.appendChild(row);
   });
@@ -564,6 +591,7 @@ $("#admin-user-form").addEventListener("submit", async (event) => {
     const profile = await createFirebaseUser({
       username: $("#admin-new-username").value,
       email: $("#admin-new-email").value,
+      phone: $("#admin-new-phone").value,
       password: $("#admin-new-password").value,
     });
     if ($("#admin-new-role").value === "admin") await changeUserRole(profile.uid, "admin");
@@ -602,6 +630,7 @@ $("#admin-user-list").addEventListener("click", async (event) => {
     const target = adminUsers.find((item) => item.uid === button.dataset.uid);
     if (!target) return refreshAdminUsers();
     if (button.classList.contains("admin-reset")) {
+      if (!(target.hasRealEmail ?? Boolean(target.email))) throw Object.assign(new Error(), { code: "app/no-recovery-email" });
       await sendResetForEmail(target.email);
       toast(TRANSLATIONS[language()].firebaseAuth.resetSent);
       return;

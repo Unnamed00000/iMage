@@ -19,7 +19,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow create: if isOwner(userId)
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.authEmail == request.auth.token.email
         && request.resource.data.role == "user";
 
       allow read: if isOwner(userId) || isAdmin();
@@ -44,7 +44,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && !exists(/databases/$(database)/documents/usernames/$(usernameLower))
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email;
+        && request.resource.data.authEmail == request.auth.token.email;
 
       allow update, delete: if isAdmin();
     }

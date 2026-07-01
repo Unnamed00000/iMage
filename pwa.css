@@ -109,7 +109,9 @@
 .admin-user-meta small { font-size: 11px; line-height: 1.35; }
 .admin-role-select { width: 100%; }
 .admin-row-actions { display: grid; gap: 7px; }
+.admin-action-note { color: var(--muted); font-size: 10px; line-height: 1.3; }
 .admin-reset,
+.admin-change-password,
 .admin-delete { min-height: 42px; padding: 9px 13px; }
 .admin-delete:disabled,
 .admin-role-select:disabled { cursor: not-allowed; opacity: .5; }

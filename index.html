@@ -38,10 +38,11 @@
       <h1>Создать профиль</h1>
       <p class="lead">Новый профиль создаётся как обычный пользователь. Роль администратора назначается в админке.</p>
       <form id="register-form" class="stack-form">
-        <label>Логин<input id="register-username" minlength="3" maxlength="32" required autocomplete="username"></label>
-        <label>Email<input id="register-email" type="email" required autocomplete="email"></label>
-        <label>Пароль<input id="register-password" type="password" minlength="6" required autocomplete="new-password"></label>
-        <label>Повторите пароль<input id="register-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Логин *<input id="register-username" minlength="3" maxlength="32" required autocomplete="username"></label>
+        <label>Email<input id="register-email" type="email" autocomplete="email"></label>
+        <label>Телефон<input id="register-phone" type="tel" autocomplete="tel"></label>
+        <label>Пароль *<input id="register-password" type="password" minlength="6" required autocomplete="new-password"></label>
+        <label>Повторите пароль *<input id="register-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
         <button class="primary wide" type="submit">Создать профиль</button>
         <button id="register-back" class="ghost wide" type="button">Назад</button>
       </form>
@@ -200,13 +201,14 @@
         <div class="admin-layout">
           <form id="admin-user-form" class="admin-create-card stack-form">
             <h3>Добавить пользователя</h3>
-            <label>Логин<input id="admin-new-username" required autocomplete="off"></label>
-            <label>Email<input id="admin-new-email" type="email" required autocomplete="off"></label>
+            <label>Логин *<input id="admin-new-username" minlength="3" maxlength="32" required autocomplete="off"></label>
+            <label>Email<input id="admin-new-email" type="email" autocomplete="off"></label>
+            <label>Телефон<input id="admin-new-phone" type="tel" autocomplete="off"></label>
             <label>Роль
               <select id="admin-new-role"><option value="user">Пользователь</option><option value="admin">Администратор</option></select>
             </label>
-            <label>Пароль<input id="admin-new-password" type="password" minlength="6" required autocomplete="new-password"></label>
-            <label>Повторите пароль<input id="admin-new-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
+            <label>Пароль *<input id="admin-new-password" type="password" minlength="6" required autocomplete="new-password"></label>
+            <label>Повторите пароль *<input id="admin-new-confirm" type="password" minlength="6" required autocomplete="new-password"></label>
             <button id="admin-create-user" class="primary wide" type="submit">Добавить пользователя</button>
           </form>
           <section class="admin-users-card" aria-labelledby="admin-users-title">
